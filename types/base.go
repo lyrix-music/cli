@@ -5,6 +5,12 @@ type UserLoginRequest struct {
 	Password string `json:"password"`
 }
 
+type UserRegisterRequest struct {
+	Username   string `json:"username"`
+	Password   string `json:"password"`
+	TelegramId int    `json:"telegram_id"`
+}
+
 type UserAuthGrant struct {
 	Token string `json:"token"`
 }
