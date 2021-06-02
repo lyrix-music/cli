@@ -13,6 +13,7 @@ import (
 	"github.com/srevinsaju/lyrix/lyrixd/mpris"
 	"github.com/srevinsaju/lyrix/lyrixd/player"
 	"github.com/srevinsaju/lyrix/lyrixd/types"
+	"github.com/urfave/cli/v2"
 	"github.com/withmandala/go-log"
 )
 
@@ -47,7 +48,7 @@ func cleanup(auth types.UserInstance) {
 	logger.Info("Done.")
 }
 
-func main() {
+func StartDaemon(c *cli.Context) error {
 	auth, err := LoadConfig()
 	if err != nil {
 		logger.Fatal(err)
@@ -57,10 +58,10 @@ func main() {
 		panic(err)
 	}
 
-	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	ch := make(chan os.Signal)
+	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
 	go func() {
-		<-c
+		<-ch
 		cleanup(auth)
 		os.Exit(1)
 	}()
@@ -100,6 +101,47 @@ func main() {
 	for {
 		CheckForSongUpdates(auth, player, song)
 		time.Sleep(5 * time.Second)
+	}
+	return nil
+}
+
+func main() {
+	app := &cli.App{
+		Name:   "Lyrix Daemon",
+		Usage:  "A daemon for lyrix music network",
+		Action: StartDaemon,
+		Commands: []*cli.Command{
+			{
+				Name: "register",
+				Action: func(c *cli.Context) error {
+					return nil
+				},
+			},
+			{
+				Name: "login",
+				Action: func(c *cli.Context) error {
+					return nil
+				},
+			},
+			{
+				Name: "reset-config",
+				Action: func(c *cli.Context) error {
+					_, configPath := GetLocalConfigPath()
+					logger.Info("Removing old configuration files...")
+					return os.RemoveAll(configPath)
+
+				},
+			},
+			{
+				Name:   "start",
+				Action: StartDaemon,
+			},
+		},
+	}
+
+	err := app.Run(os.Args)
+	if err != nil {
+		logger.Fatal(err)
 	}
 
 }

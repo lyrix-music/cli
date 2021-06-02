@@ -6,11 +6,21 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/viper"
+	"github.com/srevinsaju/lyrix/lyrixd/auth"
 	"github.com/srevinsaju/lyrix/lyrixd/types"
 )
 
-func LoadConfig() (types.UserInstance, error) {
+func GetLocalConfigPath() (string, string) {
+	userHomeDir, err := os.UserConfigDir()
+	if err != nil {
+		logger.Fatal(err)
+	}
+	configPath := filepath.Join(userHomeDir, "lyrix", "lyrixd")
+	absConfigPathYaml := filepath.Join(configPath, "config.yaml")
+	return configPath, absConfigPathYaml
+}
 
+func PreLoadConfig() {
 	// load the configuration
 	viper.SetConfigName("config")                      // name of config file (without extension)
 	viper.SetConfigType("yaml")                        // REQUIRED if the config file does not have the extension in the name
@@ -18,8 +28,26 @@ func LoadConfig() (types.UserInstance, error) {
 	viper.AddConfigPath("/etc/lyrix/lyrixd/")          // path to look for the config file in
 	viper.AddConfigPath(".")
 
+}
+
+func PostLoadConfig(absConfigPathYaml string) {
+	if err := viper.SafeWriteConfigAs(absConfigPathYaml); err != nil {
+		if os.IsNotExist(err) {
+
+			err = viper.WriteConfigAs(absConfigPathYaml)
+			if err != nil {
+				logger.Fatal(err)
+			}
+		}
+	}
+
+}
+
+func LoadConfig() (types.UserInstance, error) {
+
+	PreLoadConfig()
 	if os.Args[len(os.Args)-1] == "reset" {
-		GetUsernameAndToken()
+		auth.Login()
 		logger.Info("Re-run the app to reload from configuration.")
 		return types.UserInstance{}, errors.New("reload-configuration")
 	}
@@ -29,7 +57,7 @@ func LoadConfig() (types.UserInstance, error) {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Config file not found; ignore error if desired
 			logger.Info("Did not find configuration file. Attempting to interactively create one")
-			GetUsernameAndToken()
+			auth.Login()
 		} else {
 			logger.Fatal(err)
 			return types.UserInstance{}, err
@@ -41,28 +69,15 @@ func LoadConfig() (types.UserInstance, error) {
 	token = viper.Get("AuthToken").(string)
 	backendUrl = viper.Get("Host").(string)
 	if username == "" || token == "" || backendUrl == "" {
-		GetUsernameAndToken()
+		auth.Login()
 		logger.Info("Re-run the app to reload from configuration.")
 		return types.UserInstance{}, errors.New("reload-configuration")
 	}
 
-	userHomeDir, err := os.UserConfigDir()
-	if err != nil {
-		logger.Fatal(err)
-	}
-	configPath := filepath.Join(userHomeDir, "lyrix", "lyrixd")
-	absConfigPathYaml := filepath.Join(configPath, "config.yaml")
+	configPath, absConfigPathYaml := GetLocalConfigPath()
 	os.MkdirAll(configPath, 0o755)
 
-	if err := viper.SafeWriteConfigAs(absConfigPathYaml); err != nil {
-		if os.IsNotExist(err) {
-
-			err = viper.WriteConfigAs(absConfigPathYaml)
-			if err != nil {
-				logger.Fatal(err)
-			}
-		}
-	}
+	PostLoadConfig(absConfigPathYaml)
 
 	auth := types.UserInstance{Username: username, Token: token, Host: backendUrl}
 	return auth, nil
