@@ -167,6 +167,6 @@ func Register() {
 	if req.StatusCode != http.StatusOK && req.StatusCode != http.StatusAccepted {
 		logger.Fatal("Invalid username or password. Registration failed. Contact your server admin for more details")
 	}
-	logger.Info("Registration successful. Now, use 'lyrixd login' to login to lyrix.")
-
+	logger.Info("Registration successful. Now, use 'lyrixd' command to login to lyrix.")
+	logger.Info("To logout, use 'lyrixd reset-config'.")
 }

@@ -75,10 +75,13 @@ func LoadConfig() (types.UserInstance, error) {
 	}
 
 	configPath, absConfigPathYaml := GetLocalConfigPath()
-	os.MkdirAll(configPath, 0o755)
+	err := os.MkdirAll(configPath, 0o755)
+	if err != nil {
+		logger.Fatal(err)
+	}
 
 	PostLoadConfig(absConfigPathYaml)
 
-	auth := types.UserInstance{Username: username, Token: token, Host: backendUrl}
-	return auth, nil
+	authInstance := types.UserInstance{Username: username, Token: token, Host: backendUrl}
+	return authInstance, nil
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/srevinsaju/lyrix/lyrixd/auth"
 
 	"os"
 	"os/signal"
@@ -93,13 +94,13 @@ func StartDaemon(c *cli.Context) error {
 		time.Sleep(5 * time.Second)
 	}
 
-	player := mpris.New(conn, mpDbusId)
+	pl := mpris.New(conn, mpDbusId)
 
-	logger.Info("Media player identity:", player.GetIdentity())
+	logger.Info("Media player identity:", pl.GetIdentity())
 
 	song := &types.SongMeta{}
 	for {
-		CheckForSongUpdates(auth, player, song)
+		CheckForSongUpdates(auth, pl, song)
 		time.Sleep(5 * time.Second)
 	}
 	return nil
@@ -114,12 +115,7 @@ func main() {
 			{
 				Name: "register",
 				Action: func(c *cli.Context) error {
-					return nil
-				},
-			},
-			{
-				Name: "login",
-				Action: func(c *cli.Context) error {
+					auth.Register()
 					return nil
 				},
 			},
