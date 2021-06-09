@@ -20,7 +20,6 @@ func NotPlayingSongHandler(auth types.UserInstance) {
 }
 
 func PlayingSongHandler(auth types.UserInstance, song *types.SongMeta) {
-	logger.Info(song)
 	jsonStr, err := json.Marshal(song)
 	if err != nil {
 		logger.Warn(err)
