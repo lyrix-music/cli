@@ -10,46 +10,47 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/fatih/color"
 	"github.com/godbus/dbus/v5"
 	"github.com/srevinsaju/lyrix/lyrixd/mpris"
 	"github.com/srevinsaju/lyrix/lyrixd/player"
 	"github.com/srevinsaju/lyrix/lyrixd/types"
 	"github.com/urfave/cli/v2"
 	"github.com/withmandala/go-log"
-    "github.com/fatih/color"
 )
 
 var logger = log.New(os.Stdout)
 
 func CheckForSongUpdates(auth types.UserInstance, pl *mpris.Player, song *types.SongMeta) error {
-    metadata := pl.GetMetadata()
+	metadata := pl.GetMetadata()
 	if metadata["xesam:artist"].Value() == nil || metadata["xesam:title"].Value() == nil {
 		// wait for sometime
 		return nil
 	}
-    artist := ""
-    artists, ok := metadata["xesam:artist"].Value().([]string)
-    if ok {
-        artist = artists[0]
-    } else {
-        artist = metadata["xesam:artist"].Value().(string)
-    }
+	artist := ""
+	artists, ok := metadata["xesam:artist"].Value().([]string)
+	if ok {
+		artist = artists[0]
+	} else {
+		artist = metadata["xesam:artist"].Value().(string)
+	}
 
-    url, ok := metadata["xesam:url"].Value().(string)
-    source := "local"
+	url, ok := metadata["xesam:url"].Value().(string)
+	source := "local"
 
-    if ok && strings.HasPrefix(url, "https://music.youtube.com/") {
-        // this is a song played on music.youtube.com
-        artist = strings.Replace(artist, " - Topic", "", 1)
-        source = "music.youtube.com"
-    }
+	if ok && strings.HasPrefix(url, "https://music.youtube.com/") {
+		// this is a song played on music.youtube.com
+		artist = strings.Replace(artist, " - Topic", "", 1)
+		source = "music.youtube.com"
+	}
 	title := metadata["xesam:title"].Value().(string)
 	playerIsPlaying := pl.GetPlaybackStatus() == "\"Playing\""
 
 	if playerIsPlaying && (song.Artist != artist || song.Track != title || !song.Playing) {
-        color.Green("%s by %s", title, artist)
-        color.HiBlack("%s\n", source)
-        player.PlayingSongHandler(auth, &types.SongMeta{Track: title, Artist: artist, Source: source, Url: url})
+		color.Green("%s by %s", title, artist)
+		color.HiBlack("%s\n", source)
+		player.PlayingSongHandler(auth, &types.SongMeta{Track: title, Artist: artist, Source: source, Url: url})
 		song.Artist = artist
 		song.Track = title
 		song.Playing = true
@@ -58,7 +59,7 @@ func CheckForSongUpdates(auth types.UserInstance, pl *mpris.Player, song *types.
 		song.Playing = false
 		player.NotPlayingSongHandler(auth)
 	}
-    return nil
+	return nil
 }
 
 func cleanup(auth types.UserInstance) {
@@ -68,13 +69,13 @@ func cleanup(auth types.UserInstance) {
 }
 
 func StartDaemon(c *cli.Context) error {
-    for {
-        err := DaemonLoop()
-        if err != nil {
-            time.Sleep(5)
-        }
-    }
-    return nil
+	for {
+		err := DaemonLoop()
+		if err != nil {
+			time.Sleep(5)
+		}
+	}
+	return nil
 }
 
 func DaemonLoop() error {
@@ -97,8 +98,7 @@ func DaemonLoop() error {
 
 	// id of the music player from dbus
 	mpDbusId := ""
-	userProvidedDbusId := os.Getenv("LYRIX_MUSIC_PLAYER_DBUS_ID")
-    logger.Info("Waiting for a music player...")
+	logger.Info("Waiting for a music player...")
 	for {
 		names, err := mpris.List(conn)
 		if err != nil {
@@ -108,16 +108,17 @@ func DaemonLoop() error {
 			logger.Fatal("No media player found.")
 		}
 
-		for i := range names {
-            logger.Infof("Scanning %s", names[i])
-			userRunningElisaPlayer := (strings.HasSuffix(names[i], "elisa") && (userProvidedDbusId == "" || strings.HasSuffix(userProvidedDbusId, "elisa")))
-			if names[i] == userProvidedDbusId || userRunningElisaPlayer {
-				mpDbusId = names[i]
-				break
-			}
+		mpDbusId = ""
+		if len(names) == 1 {
+			mpDbusId = names[0]
+			break
 		}
+		prompt := &survey.Select{
+			Message: "Lyrix found multiple players. Select one:",
+			Options: names,
+		}
+		survey.AskOne(prompt, &mpDbusId)
 		if mpDbusId != "" {
-			logger.Infof("Detected running %s player", mpDbusId)
 			break
 		}
 		time.Sleep(5 * time.Second)
