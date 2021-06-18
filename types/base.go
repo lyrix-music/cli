@@ -25,4 +25,6 @@ type SongMeta struct {
 	Playing bool
 	Track   string `json:"track"`
 	Artist  string `json:"artist"`
+	Source  string `json:"source,omitempty"`
+	Url     string `json:"url,omitempty"`
 }
