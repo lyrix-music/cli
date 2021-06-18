@@ -26,7 +26,15 @@ func CheckForSongUpdates(auth types.UserInstance, pl *mpris.Player, song *types.
 		// wait for sometime
 		return
 	}
-	artist := metadata["xesam:artist"].Value().([]string)[0]
+    artist := ""
+    artists, ok := metadata["xesam:artist"].Value().([]string)
+    if ok {
+        artist = artists[0]
+    } else {
+        artist = metadata["xesam:artist"].Value().(string)
+    }
+    artist = strings.Replace(artist, " - Topic", "", 1)
+
 	title := metadata["xesam:title"].Value().(string)
 	playerIsPlaying := pl.GetPlaybackStatus() == "\"Playing\""
 
@@ -81,6 +89,7 @@ func StartDaemon(c *cli.Context) error {
 		}
 
 		for i := range names {
+            logger.Infof("Scanning %s", names[i])
 			userRunningElisaPlayer := (strings.HasSuffix(names[i], "elisa") && (userProvidedDbusId == "" || strings.HasSuffix(userProvidedDbusId, "elisa")))
 			if names[i] == userProvidedDbusId || userRunningElisaPlayer {
 				mpDbusId = names[i]
