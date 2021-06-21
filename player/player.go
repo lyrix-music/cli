@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 
@@ -54,4 +55,49 @@ func PlayingSongHandler(auth *types.UserInstance, song *types.SongMeta) {
 		return
 	}
 	defer resp.Body.Close()
+}
+
+
+
+func GetSimilar(auth *types.UserInstance) []types.SongMeta {
+	// do not do anything for a user who havent auth'd yet.
+
+	var songs []types.SongMeta
+
+	req, err := http.NewRequest(
+		"GET",
+		fmt.Sprintf("%s/user/player/local/current_song/similar", auth.Host),
+		nil,
+	)
+	if err != nil {
+		logger.Warn(err)
+		return songs
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", auth.Token))
+
+	resp, err := client.Do(req)
+
+	if err != nil {
+		logger.Warn(err)
+		return songs
+	}
+	if resp == nil {
+		logger.Warn("Failed to complete request")
+		return songs
+	}
+	defer resp.Body.Close()
+
+	similarSongsBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		logger.Warn(err)
+		return songs
+	}
+	err = json.Unmarshal(similarSongsBytes, &songs)
+	if err != nil {
+		logger.Warn(err)
+		return songs
+	}
+	return songs
+
 }

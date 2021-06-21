@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/adrg/xdg"
-	"github.com/shkh/lastfm-go/lastfm"
 	"github.com/srevinsaju/lyrix/lyrixd/auth"
+
 	"os/exec"
 	"os/user"
 
@@ -29,7 +29,6 @@ var logger = log.New(os.Stdout)
 
 type Context struct {
 	LastFmEnabled bool
-	Lastfm *lastfm.Api
 	Predicted bool
 	Tui bool
 }
@@ -83,15 +82,15 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 		// logger.Info("pl.GetIdentity() == \"Elisa\" && ctx.LastFmEnabled && !ctx.Predicted", pl.GetIdentity() == "\"Elisa\"" && ctx.LastFmEnabled && !ctx.Predicted)
 		if pl.GetIdentity() == "\"Elisa\"" && ctx.LastFmEnabled && !ctx.Predicted  && song.Playing{
 			ctx.Predicted = true
-			tracks, err := ctx.Lastfm.Track.GetSimilar(map[string]interface{}{
-				"track": song.Track,
-				"artist": song.Artist,
-			})
-			if err != nil { return }
 
-			for i := range tracks.Tracks {
+			similarSongs := player.GetSimilar(auth)
+			if len(similarSongs) == 0 {
+				return
+			}
+
+			for i := range similarSongs {
 				go func(j int) {
-					searchString := fmt.Sprintf("%s %s", tracks.Tracks[j].Name, tracks.Tracks[j].Artist.Name)
+					searchString := fmt.Sprintf("%s %s", similarSongs[j].Track, similarSongs[j].Artist)
 					searchCommand := exec.Command(
 						"baloosearch",
 						"-d", strings.Replace(xdg.UserDirs.Music, "~", dir, -1),
@@ -109,15 +108,14 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 						// just suggest this song to the user
 
 						color.HiBlack("Suggestion:")
-						color.Yellow("%s by %s", tracks.Tracks[j].Name, tracks.Tracks[j].Artist.Name)
-						color.Blue(tracks.Tracks[j].Url)
+						color.Yellow("%s by %s", similarSongs[j].Track, similarSongs[j].Artist)
 						fmt.Println("")
 
 						return
 					}
 					// the baloosearch found an answer
 					color.HiBlack("Queued:")
-					color.Green("%s by %s", tracks.Tracks[j].Name, tracks.Tracks[j].Artist.Name)
+					color.Green("%s by %s", similarSongs[j].Track, similarSongs[j].Artist)
 					fmt.Println("")
 					err = exec.Command("elisa", s).Run()
 					if err != nil {
@@ -143,11 +141,9 @@ func cleanup(auth *types.UserInstance) {
 func StartDaemon(c *cli.Context) error {
 
 	ctx := &Context{
-		LastFmEnabled: c.Bool("lastfm"),
+		LastFmEnabled: c.Bool("lastfm-predict"),
 	}
-	if ctx.LastFmEnabled {
-		ctx.Lastfm = lastfm.New("", "")
-	}
+
 
 	for {
 		err := DaemonLoop(ctx)
@@ -202,7 +198,7 @@ func DaemonLoop(ctx *Context) error {
 			Options: names,
 		}
 		survey.AskOne(prompt, &mpDbusId)
-		if mpDbusId != "" {
+		if mpDbusId == "" {
 			break
 		}
 		time.Sleep(5 * time.Second)
