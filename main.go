@@ -146,7 +146,7 @@ func StartDaemon(c *cli.Context) error {
 		LastFmEnabled: c.Bool("lastfm"),
 	}
 	if ctx.LastFmEnabled {
-		ctx.Lastfm = lastfm.New("d7ed2df3ea5375eb7e17a4e3f84c4086", "")
+		ctx.Lastfm = lastfm.New("", "")
 	}
 
 	for {
