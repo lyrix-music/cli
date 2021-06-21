@@ -90,6 +90,9 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 
 			for i := range similarSongs {
 				go func(j int) {
+					if similarSongs[j].Track == "" || similarSongs[j].Artist == "" {
+						return
+					}
 					searchString := fmt.Sprintf("%s %s", similarSongs[j].Track, similarSongs[j].Artist)
 					searchCommand := exec.Command(
 						"baloosearch",
@@ -144,16 +147,6 @@ func StartDaemon(c *cli.Context) error {
 		LastFmEnabled: c.Bool("lastfm-predict"),
 	}
 
-
-	for {
-		err := DaemonLoop(ctx)
-		if err != nil {
-			time.Sleep(5)
-		}
-	}
-}
-
-func DaemonLoop(ctx *Context) error {
 	auth, err := LoadConfig()
 	if err != nil {
 		logger.Warn(err)
@@ -191,17 +184,19 @@ func DaemonLoop(ctx *Context) error {
 		mpDbusId = ""
 		if len(names) == 1 {
 			mpDbusId = names[0]
-			break
+		} else {
+			prompt := &survey.Select{
+				Message: "Lyrix found multiple players. Select one:",
+				Options: names,
+			}
+			survey.AskOne(prompt, &mpDbusId)
 		}
-		prompt := &survey.Select{
-			Message: "Lyrix found multiple players. Select one:",
-			Options: names,
-		}
-		survey.AskOne(prompt, &mpDbusId)
+
 		if mpDbusId == "" {
+			logger.Warn("Failed to detect media players")
 			break
 		}
-		time.Sleep(5 * time.Second)
+
 
 		pl := mpris.New(conn, mpDbusId)
 
