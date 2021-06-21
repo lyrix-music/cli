@@ -1,8 +1,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"github.com/adrg/xdg"
+	"github.com/shkh/lastfm-go/lastfm"
 	"github.com/srevinsaju/lyrix/lyrixd/auth"
+	"os/exec"
+	"os/user"
 
 	"os"
 	"os/signal"
@@ -22,8 +27,22 @@ import (
 
 var logger = log.New(os.Stdout)
 
-func CheckForSongUpdates(auth types.UserInstance, pl *mpris.Player, song *types.SongMeta) error {
-	metadata := pl.GetMetadata()
+type Context struct {
+	LastFmEnabled bool
+	Lastfm *lastfm.Api
+	Predicted bool
+	Tui bool
+}
+
+func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Player, song *types.SongMeta) error {
+
+	usr, _ := user.Current()
+	dir := usr.HomeDir
+
+	metadata, ok := pl.GetMetadata()
+	if !ok {
+		return errors.New("player is no longer active")
+	}
 	if metadata["xesam:artist"].Value() == nil || metadata["xesam:title"].Value() == nil {
 		// wait for sometime
 		return nil
@@ -59,29 +78,89 @@ func CheckForSongUpdates(auth types.UserInstance, pl *mpris.Player, song *types.
 		song.Playing = false
 		player.NotPlayingSongHandler(auth)
 	}
+	go func() {
+		// el
+		// logger.Info("pl.GetIdentity() == \"Elisa\" && ctx.LastFmEnabled && !ctx.Predicted", pl.GetIdentity() == "\"Elisa\"" && ctx.LastFmEnabled && !ctx.Predicted)
+		if pl.GetIdentity() == "\"Elisa\"" && ctx.LastFmEnabled && !ctx.Predicted  && song.Playing{
+			ctx.Predicted = true
+			tracks, err := ctx.Lastfm.Track.GetSimilar(map[string]interface{}{
+				"track": song.Track,
+				"artist": song.Artist,
+			})
+			if err != nil { return }
+
+			for i := range tracks.Tracks {
+				go func(j int) {
+					searchString := fmt.Sprintf("%s %s", tracks.Tracks[j].Name, tracks.Tracks[j].Artist.Name)
+					searchCommand := exec.Command(
+						"baloosearch",
+						"-d", strings.Replace(xdg.UserDirs.Music, "~", dir, -1),
+						searchString)
+					out, err := searchCommand.CombinedOutput()
+					if err != nil {
+						logger.Warnf("Failed to execute '%s'", searchCommand.String())
+						logger.Warn(err, fmt.Sprintf("%s", out))
+						return
+					}
+					output := string(out[:])
+					s := strings.Split(output, "\n")[0]
+					if strings.HasPrefix(s, "Elapsed") {
+						// baloosearch didnt give a valid output
+						// just suggest this song to the user
+
+						color.HiBlack("Suggestion:")
+						color.Yellow("%s by %s", tracks.Tracks[j].Name, tracks.Tracks[j].Artist.Name)
+						color.Blue(tracks.Tracks[j].Url)
+						fmt.Println("")
+
+						return
+					}
+					// the baloosearch found an answer
+					color.HiBlack("Queued:")
+					color.Green("%s by %s", tracks.Tracks[j].Name, tracks.Tracks[j].Artist.Name)
+					fmt.Println("")
+					err = exec.Command("elisa", s).Run()
+					if err != nil {
+						logger.Warn(err)
+					}
+
+				}(i)
+
+			}
+		}
+	}()
+
+
 	return nil
 }
 
-func cleanup(auth types.UserInstance) {
+func cleanup(auth *types.UserInstance) {
 	logger.Info("Cleaning up. Sending clear events")
 	player.NotPlayingSongHandler(auth)
 	logger.Info("Done.")
 }
 
 func StartDaemon(c *cli.Context) error {
+
+	ctx := &Context{
+		LastFmEnabled: c.Bool("lastfm"),
+	}
+	if ctx.LastFmEnabled {
+		ctx.Lastfm = lastfm.New("d7ed2df3ea5375eb7e17a4e3f84c4086", "")
+	}
+
 	for {
-		err := DaemonLoop()
+		err := DaemonLoop(ctx)
 		if err != nil {
 			time.Sleep(5)
 		}
 	}
-	return nil
 }
 
-func DaemonLoop() error {
+func DaemonLoop(ctx *Context) error {
 	auth, err := LoadConfig()
 	if err != nil {
-		logger.Fatal(err)
+		logger.Warn(err)
 	}
 	conn, err := dbus.SessionBus()
 	if err != nil {
@@ -90,11 +169,16 @@ func DaemonLoop() error {
 
 	ch := make(chan os.Signal)
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-ch
-		cleanup(auth)
-		os.Exit(1)
-	}()
+
+
+	if auth != nil {
+		go func() {
+			<-ch
+			cleanup(auth)
+			os.Exit(1)
+		}()
+	}
+
 
 	// id of the music player from dbus
 	mpDbusId := ""
@@ -122,25 +206,41 @@ func DaemonLoop() error {
 			break
 		}
 		time.Sleep(5 * time.Second)
+
+		pl := mpris.New(conn, mpDbusId)
+
+		logger.Info("Media player identity:", pl.GetIdentity())
+
+		song := &types.SongMeta{}
+		for {
+			err := CheckForSongUpdates(ctx, auth, pl, song)
+			if err != nil {
+				logger.Warn(err)
+				break
+			}
+			time.Sleep(5 * time.Second)
+
+		}
 	}
 
-	pl := mpris.New(conn, mpDbusId)
 
-	logger.Info("Media player identity:", pl.GetIdentity())
-
-	song := &types.SongMeta{}
-	for {
-		CheckForSongUpdates(auth, pl, song)
-		time.Sleep(5 * time.Second)
-	}
 	return nil
 }
+
 
 func main() {
 	app := &cli.App{
 		Name:   "Lyrix Daemon",
 		Usage:  "A daemon for lyrix music network",
 		Action: StartDaemon,
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name: "lastfm-predict",
+				Usage: "Use Last.fm suggestions to dynamically modify playlists " +
+					   "according to your current playing track. (only KDE Elisa)",
+			},
+
+		},
 		Commands: []*cli.Command{
 			{
 				Name: "register",
@@ -155,12 +255,7 @@ func main() {
 					_, configPath := GetLocalConfigPath()
 					logger.Info("Removing old configuration files...")
 					return os.RemoveAll(configPath)
-
 				},
-			},
-			{
-				Name:   "start",
-				Action: StartDaemon,
 			},
 		},
 	}

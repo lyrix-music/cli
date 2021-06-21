@@ -150,8 +150,9 @@ func (i *player) GetShuffle() bool {
 	return getProperty(i.obj, playerInterface, "Shuffle").Value().(bool)
 }
 
-func (i *player) GetMetadata() map[string]dbus.Variant {
-	return getProperty(i.obj, playerInterface, "Metadata").Value().(map[string]dbus.Variant)
+func (i *player) GetMetadata() (map[string]dbus.Variant, bool) {
+	v, ok := getProperty(i.obj, playerInterface, "Metadata").Value().(map[string]dbus.Variant)
+	return v, ok
 }
 
 func (i *player) GetVolume() float64 {

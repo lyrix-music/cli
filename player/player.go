@@ -9,17 +9,24 @@ import (
 
 	"github.com/srevinsaju/lyrix/lyrixd/types"
 	"github.com/withmandala/go-log"
+
 )
+
+
 
 var logger = log.New(os.Stdout)
 var client = &http.Client{}
 
-func NotPlayingSongHandler(auth types.UserInstance) {
+func NotPlayingSongHandler(auth *types.UserInstance) {
 	song := &types.SongMeta{Track: "", Artist: ""}
 	PlayingSongHandler(auth, song)
 }
 
-func PlayingSongHandler(auth types.UserInstance, song *types.SongMeta) {
+func PlayingSongHandler(auth *types.UserInstance, song *types.SongMeta) {
+	// do not do anything for a user who havent auth'd yet.
+	if auth == nil {
+		return
+	}
 	jsonStr, err := json.Marshal(song)
 	if err != nil {
 		logger.Warn(err)

@@ -52,6 +52,8 @@ func Login() {
 	}
 	survey.AskOne(passwordPrompt, &password)
 
+
+
 	jsonStr, err := json.Marshal(types.UserLoginRequest{Username: username, Password: password})
 	if err != nil {
 		logger.Fatal(err)

@@ -43,13 +43,13 @@ func PostLoadConfig(absConfigPathYaml string) {
 
 }
 
-func LoadConfig() (types.UserInstance, error) {
+func LoadConfig() (*types.UserInstance, error) {
 
 	PreLoadConfig()
 	if os.Args[len(os.Args)-1] == "reset" {
 		auth.Login()
 		logger.Info("Re-run the app to reload from configuration.")
-		return types.UserInstance{}, errors.New("reload-configuration")
+		return nil, errors.New("reload-configuration")
 	}
 
 	username, token, backendUrl := "", "", ""
@@ -60,7 +60,7 @@ func LoadConfig() (types.UserInstance, error) {
 			auth.Login()
 		} else {
 			logger.Fatal(err)
-			return types.UserInstance{}, err
+			return nil, err
 		}
 
 	}
@@ -71,7 +71,7 @@ func LoadConfig() (types.UserInstance, error) {
 	if username == "" || token == "" || backendUrl == "" {
 		auth.Login()
 		logger.Info("Re-run the app to reload from configuration.")
-		return types.UserInstance{}, errors.New("reload-configuration")
+		return nil, errors.New("reload-configuration")
 	}
 
 	configPath, absConfigPathYaml := GetLocalConfigPath()
@@ -82,6 +82,6 @@ func LoadConfig() (types.UserInstance, error) {
 
 	PostLoadConfig(absConfigPathYaml)
 
-	authInstance := types.UserInstance{Username: username, Token: token, Host: backendUrl}
+	authInstance := &types.UserInstance{Username: username, Token: token, Host: backendUrl}
 	return authInstance, nil
 }
