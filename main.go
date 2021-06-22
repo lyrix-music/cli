@@ -32,6 +32,7 @@ type Context struct {
 	Predicted bool
 	Tui bool
 	Scrobble bool
+
 }
 
 func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Player, song *types.SongMeta) error {
@@ -250,6 +251,14 @@ func main() {
 					return nil
 				},
 			},
+            {
+				Name: "login",
+				Action: func(c *cli.Context) error {
+                    auth.Login()
+					return nil
+				},
+			},
+
 			{
 				Name: "reset-config",
 				Action: func(c *cli.Context) error {
