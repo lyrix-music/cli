@@ -31,6 +31,7 @@ type Context struct {
 	LastFmEnabled bool
 	Predicted bool
 	Tui bool
+	Scrobble bool
 }
 
 func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Player, song *types.SongMeta) error {
@@ -68,7 +69,10 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 	if playerIsPlaying && (song.Artist != artist || song.Track != title || !song.Playing) {
 		color.Green("%s by %s", title, artist)
 		color.HiBlack("%s\n", source)
-		player.PlayingSongHandler(auth, &types.SongMeta{Track: title, Artist: artist, Source: source, Url: url})
+		player.PlayingSongHandler(
+			auth,
+			&types.SongMeta{Track: title, Artist: artist, Source: source, Url: url, Scrobble: ctx.Scrobble },
+		)
 		song.Artist = artist
 		song.Track = title
 		song.Playing = true
@@ -145,6 +149,7 @@ func StartDaemon(c *cli.Context) error {
 
 	ctx := &Context{
 		LastFmEnabled: c.Bool("lastfm-predict"),
+		Scrobble: c.Bool("lastfm-scrobble"),
 	}
 
 	auth, err := LoadConfig()
@@ -229,6 +234,11 @@ func main() {
 				Name: "lastfm-predict",
 				Usage: "Use Last.fm suggestions to dynamically modify playlists " +
 					   "according to your current playing track. (only KDE Elisa)",
+			},
+
+			&cli.BoolFlag{
+				Name: "lastfm-scrobble",
+				Usage: "Send your current listening song to last fm to get customized tracks",
 			},
 
 		},
