@@ -17,6 +17,7 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
+	"github.com/gen2brain/beeep"
 	"github.com/godbus/dbus/v5"
 	"github.com/srevinsaju/lyrix/lyrixd/mpris"
 	"github.com/srevinsaju/lyrix/lyrixd/player"
@@ -74,9 +75,26 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 			auth,
 			&types.SongMeta{Track: title, Artist: artist, Source: source, Url: url, Scrobble: ctx.Scrobble },
 		)
+
+		if song.Track != "" {
+			// the previous saved song was not a blank song
+			// implies that the user had not paused the song, but song changed naturally
+
+			message := ""
+			if ctx.Scrobble {
+				message = "Now scrobbling"
+			} else {
+				message = "Now playing"
+			}
+			err := beeep.Notify(fmt.Sprintf("%s by %s", title, artist), message, "")
+			if err != nil {
+				logger.Warn(err)
+			}
+		}
 		song.Artist = artist
 		song.Track = title
 		song.Playing = true
+
 	} else if pl.GetPlaybackStatus() == "\"Paused\"" && song.Playing {
 		fmt.Println("Playback is paused now")
 		song.Playing = false
