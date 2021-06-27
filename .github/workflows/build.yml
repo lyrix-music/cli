@@ -25,12 +25,24 @@ jobs:
       run: |
         go build -ldflags "-s -w" .
 
+    - name: Build Desktop AppImage
+      run: |
+        cd cmd/desktop
+        go build -ldflags "-s -w" .
+        cp AppDir squashfs-root -r
+        cp ./desktop squashfs-root/lyrix-desktop
+        cp templates static squashfs-root/. -r
+        wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+        chmod +x appimagetool*.AppImage
+        ./appimagetool*.AppImage squashfs-root
+        cd ../..
+
     - name: Release
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         wget https://github.com/TheAssassin/pyuploadtool/releases/download/continuous/pyuploadtool-x86_64.AppImage
         chmod +x pyuploadtool-x86_64.AppImage
-        ./pyuploadtool-x86_64.AppImage lyrixd
+        ./pyuploadtool-x86_64.AppImage lyrixd cmd/desktop/Lyrix*.AppImage
 
 
