@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="section">
+  <div class="container has-text-centered">
+    <h1 class="title">
+      🎶 Login to Lyrix 🎵
+    </h1>
+    <p class="subtitle">
+      Enter your credentials to receive an authorization code. Send this back to the bot, to
+      complete the authorization.
+    </p>
+    <br>
+    <form id="login" style="max-width: 300px; text-align: left; margin: auto;">
+      <div class="field">
+        <label class="label" for="username">Username</label>
+        <div class="control has-icons-left has-icons-right">
+          <input class="input" type="text" name="username" id="username"
+                 placeholder="@beethoven@greatmusicians.co">
+
+        </div>
+      </div>
+      <div class="field">
+        <label class="label" for="password">Password</label>
+        <div class="control has-icons-left has-icons-right">
+          <input class="input" type="password" name="password" id="password"
+                 placeholder="Password">
+        </div>
+      </div>
+      <div class="field is-grouped">
+        <div class="control">
+          <button type="submit"
+                  id='submitButton'
+                  name='submit'
+                  class="button is-link">Login</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</section>
+
+<script src="../static/js/jquery-3.6.0.min.js"></script>
+<script src="/s/js/jquery-3.6.0.min.js"></script>
+<script src="/s/js/utils.js"></script>
+<script>
+  console.debug("Checking if user is logged in.")
+  $.get("/user/logged-in", function(data) {
+    console.log("Received data from /user/logged-in")
+    if (data["logged_in"] === true) {
+      console.log("User is logged in, redirecting him to home page")
+      window.location.replace("/")
+    }
+  }, "json")
+
+
+
+  $("#login").submit(function (e) {
+    e.preventDefault()
+    $('#submitButton').addClass('is-loading')
+    let array = $( this ).serializeArray()
+    let data = objectifyForm(array)
+    if (data["username"] === "" || data["password"] === "") {
+      return
+    }
+      
+
+    let userIdParsed = parseUserId(data["username"])
+    let homeserver = userIdParsed[1]
+    
+    console.log(data)
+    console.log(data["username"], data["password"])
+    data["username"] = userIdParsed[0]
+    console.log(`https://${homeserver}/login`)
+
+    $.postJSON(`https://${homeserver}/login`, data, function (k) {
+
+      console.log(k["token"])
+      setCookie("token", k["token"], 600)
+      setCookie("username", data["username"])
+      setCookie("homeserver", homeserver)
+      let configData = {
+        "token": k["token"],
+        "username": data["username"],
+        "host": `https://${homeserver}`
+      }
+      $.postJSON(`/config`, configData, function (req, status) {
+        window.location.replace("/")
+      }, {
+        error: function (req, status) {
+          console.log(req.status)
+          console.log(`Failed to complete, ${status}`)
+          $('#submitButton').removeClass('is-loading')
+        }
+     })
+
+      window.location.replace('/');
+      $('#submitButton').removeClass('is-loading')
+
+    }, {
+      error: function (req, status) {
+        console.log(req.status)
+        console.log(`Failed to complete, ${status}`)
+        $('#submitButton').removeClass('is-loading')
+      }
+    })
+
+  })
+</script>
+{% endblock %}

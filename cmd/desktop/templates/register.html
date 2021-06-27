@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<!-- COPYRIGHT (C) MIT LICENSE -->
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <!-- Mobile Responsive compatibility layer -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="Description" content="Lyrixx Bot Authorization">
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.2/css/bulma.min.css">
+
+   <meta property="og:title" content="Lyrix Authorization" />
+    <meta property="og:url" content="https://lyrix.srev.in" />
+      <title>Register | Lyrix</title>
+  </head>
+      <body>
+  <section class="section">
+    <div class="container has-text-centered">
+      <h1 class="title">
+        🎶 Register with Lyrix 🎵
+      </h1>
+      <p class="subtitle">
+          Create a secure username and password to create an account. Make sure you
+          create a fairly strong password, and make sure your remember it (coz.. for now, there is no way
+          of resetting a forgotten password 🤷‍🤷‍️
+      </p>
+        <br>
+        <form action='register?id={{ auth_id }}' method='POST' style="max-width: 300px; text-align: left; margin: auto;">
+
+            <div class="field">
+              <label class="label" for="user_id">Username</label>
+              <div class="control has-icons-left has-icons-right">
+                <input class="input" type="text" name="user_id" id="user_id"
+                       placeholder="@beethoven@greatmusicians.co">
+
+              </div>
+            </div>
+            <div class="field">
+              <label class="label" for="password">Password</label>
+              <div class="control has-icons-left has-icons-right">
+                <input class="input" type="password" name="password" id="password"
+                       placeholder="Password">
+
+              </div>
+            </div>
+            <div class="field">
+              <label class="label" for="password">Confirm password</label>
+              <div class="control has-icons-left has-icons-right">
+                <input class="input" type="password" name="confirm_password" id="confirm_password"
+                       placeholder="Password">
+
+              </div>
+            </div>
+
+            <div class="field is-grouped">
+              <div class="control">
+                <input type='submit' name='submit' class="button is-link"/>
+              </div>
+            </div>
+
+
+        </form>
+
+    </div>
+  </section>
+
+      </body>
+</html>
