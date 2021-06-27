@@ -8,7 +8,7 @@ function playerChangedCallback(item) {
     let data = {
         "dbus_id": item.text
     }
-    $.postJSON("/player", data, function () {
+    $.postJSON("/api/v1/player", data, function () {
         console.log(`Player changed successfully, received ${data} as player name`)
     })
     $(".dropdown").removeClass("is-active")
@@ -17,7 +17,7 @@ function playerChangedCallback(item) {
 
 function setScrobble(enabled) {
     console.log("Requesting server to change scrobble settings")
-    $.post(`/prefs/scrobble/${enabled}`, "", function () {
+    $.post(`/api/v1/prefs/scrobble/${enabled}`, "", function () {
         console.log("Player changed successfully")
     }, "text")
 }
@@ -25,7 +25,7 @@ function setScrobble(enabled) {
 
 function getLyrics() {
     console.log("Trying to fetch Lyrics")
-    $.get("/updates/lyrics", function (data) {
+    $.get("/api/v1/updates/lyrics", function (data) {
         console.log("Received lyrics")
         $(".lyrics").html(data.replaceAll("\n", "<br>"))
     }, "text")
@@ -33,7 +33,7 @@ function getLyrics() {
 }
 
 function getPlayers() {
-    $.get("/updates/players", function (data) {
+    $.get("/api/v1/updates/players", function (data) {
         if (data === currentPlayers) {
             return
         }
@@ -52,7 +52,7 @@ function getPlayers() {
 function getUpdates() {
     console.log("Trying to get updates on song")
 
-    $.get("/updates/song", function (data) {
+    $.get("/api/v1/updates/song", function (data) {
         // console.log("Received updates")
         let track = data["track"]
         let artist = data["artist"]

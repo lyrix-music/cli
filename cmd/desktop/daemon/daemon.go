@@ -108,15 +108,6 @@ func daemon() {
 	if len(names) == 1 {
 		mpDbusId = names[0]
 	}
-	/*
-
-	} else {
-		prompt := &survey.Select{
-			Message: "Lyrix found multiple players. Select one:",
-			Options: names,
-		}
-		survey.AskOne(prompt, &mpDbusId)
-	}*/
 
 	if mpDbusId == "" && player == nil {
 		logger.Warn("Failed to detect media players")

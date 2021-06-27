@@ -45,21 +45,21 @@ func BuildServer(cfg *types.UserInstance) *fiber.App {
 		return c.Render("register", fiber.Map{})
 	})
 
-	app.Get("/user/logged-in", func(c *fiber.Ctx) error {
+	app.Get("/api/v1/user/logged-in", func(c *fiber.Ctx) error {
 		loginStatus := daemon.GetAuth() != nil
 		return c.JSON(map[string]bool {
 			"logged_in": loginStatus,
 		})
 	})
 
-	app.Get("/config", func(c *fiber.Ctx) error {
+	app.Get("/api/v1/config", func(c *fiber.Ctx) error {
 		if cfg != nil {
 			return c.JSON(cfg)
 		}
 		return c.SendStatus(fiber.StatusNotFound)
 	})
 
-	app.Post("/config", func(c *fiber.Ctx) error {
+	app.Post("/api/v1/config", func(c *fiber.Ctx) error {
 		err := json.Unmarshal(c.Body(), &cfg)
 		daemon.SetAuth(cfg)
 		if err != nil {
@@ -68,13 +68,13 @@ func BuildServer(cfg *types.UserInstance) *fiber.App {
 		return c.SendStatus(fiber.StatusAccepted)
 	})
 
-	app.Post("/prefs/scrobble/:enabled", func(c *fiber.Ctx) error {
+	app.Post("/api/v1/prefs/scrobble/:enabled", func(c *fiber.Ctx) error {
 		enabled := c.Params("enabled")
 		daemon.SetScrobbleEnabled(enabled == "true")
 		return c.SendStatus(fiber.StatusAccepted)
 	})
 
-	app.Post("/player", func(c *fiber.Ctx) error {
+	app.Post("/api/v1/player", func(c *fiber.Ctx) error {
 		// set the current music player listener
 		playerReq := &PlayerChangeRequest{}
 		err := json.Unmarshal(c.Body(), playerReq)
@@ -89,7 +89,7 @@ func BuildServer(cfg *types.UserInstance) *fiber.App {
 		return c.SendString(playerName)
 	})
 
-	app.Get("/player", func(c *fiber.Ctx) error {
+	app.Get("/api/v1/player", func(c *fiber.Ctx) error {
 		player := daemon.GetPlayer()
 		if player == nil {
 			logger.Warn("The received player is nil. No media players detected")
@@ -98,7 +98,7 @@ func BuildServer(cfg *types.UserInstance) *fiber.App {
 		return c.JSON(player.GetIdentity())
 	})
 
-	app.Get("/updates/players", func(c *fiber.Ctx) error {
+	app.Get("/api/v1/updates/players", func(c *fiber.Ctx) error {
 		conn, err := dbus.SessionBus()
 		if err != nil {
 			panic(err)
@@ -111,14 +111,14 @@ func BuildServer(cfg *types.UserInstance) *fiber.App {
 		return c.JSON(names)
 	})
 
-	app.Get("/updates/song", func(c *fiber.Ctx) error {
+	app.Get("/api/v1/updates/song", func(c *fiber.Ctx) error {
 		if daemon.GetSong() == nil {
 			return c.SendStatus(fiber.StatusNotFound)
 		}
 		return c.JSON(*daemon.GetSong())
 	})
 
-	app.Get("/updates/lyrics", func(c *fiber.Ctx) error {
+	app.Get("/api/v1/updates/lyrics", func(c *fiber.Ctx) error {
 		s := daemon.GetSong()
 		if s == nil {
 			return c.SendStatus(fiber.StatusNotFound)

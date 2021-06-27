@@ -43,7 +43,7 @@
 <script src="/s/js/utils.js"></script>
 <script>
   console.debug("Checking if user is logged in.")
-  $.get("/user/logged-in", function(data) {
+  $.get("/api/v1/user/logged-in", function(data) {
     console.log("Received data from /user/logged-in")
     if (data["logged_in"] === true) {
       console.log("User is logged in, redirecting him to home page")
@@ -82,7 +82,7 @@
         "username": data["username"],
         "host": `https://${homeserver}`
       }
-      $.postJSON(`/config`, configData, function (req, status) {
+      $.postJSON(`/api/v1/config`, configData, function (req, status) {
         window.location.replace("/")
       }, {
         error: function (req, status) {
