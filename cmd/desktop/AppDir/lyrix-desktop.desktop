@@ -1,0 +1,11 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Name=Lyrix
+GenericName=lyrix
+Comment=A lyrics fetcher for desktop
+Exec=lyrix-desktop %U
+Icon=lyrix-desktop
+Type=Application
+Categories=Utility;
+StartupWMClass=lyrix
+

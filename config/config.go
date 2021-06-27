@@ -1,7 +1,11 @@
-package main
+package config
 
 import (
 	"errors"
+	"fmt"
+	"github.com/srevinsaju/lyrix/lyrixd/meta"
+	"github.com/srevinsaju/lyrix/lyrixd/service"
+
 	"os"
 	"path/filepath"
 
@@ -10,22 +14,26 @@ import (
 	"github.com/srevinsaju/lyrix/lyrixd/types"
 )
 
-func GetLocalConfigPath() (string, string) {
+
+var absConfigPathYaml = ""
+var configPath = ""
+
+func GetLocalConfigPath(appName string) (string, string) {
 	userHomeDir, err := os.UserConfigDir()
 	if err != nil {
-		logger.Fatal(err)
+		service.logger.Fatal(err)
 	}
-	configPath := filepath.Join(userHomeDir, "lyrix", "lyrixd")
+	configPath := filepath.Join(userHomeDir, "lyrix", appName)
 	absConfigPathYaml := filepath.Join(configPath, "config.yaml")
 	return configPath, absConfigPathYaml
 }
 
-func PreLoadConfig() {
+func PreLoadConfig(appName string) {
 	// load the configuration
 	viper.SetConfigName("config")                      // name of config file (without extension)
 	viper.SetConfigType("yaml")                        // REQUIRED if the config file does not have the extension in the name
-	viper.AddConfigPath("$HOME/.config/lyrix/lyrixd/") // call multiple times to add many search paths
-	viper.AddConfigPath("/etc/lyrix/lyrixd/")          // path to look for the config file in
+	viper.AddConfigPath(fmt.Sprintf("$HOME/.config/lyrix/%s/", appName)) // call multiple times to add many search paths
+	viper.AddConfigPath(fmt.Sprintf("/etc/lyrix/%s/", appName))          // path to look for the config file in
 	viper.AddConfigPath(".")
 
 }
@@ -36,30 +44,25 @@ func PostLoadConfig(absConfigPathYaml string) {
 
 			err = viper.WriteConfigAs(absConfigPathYaml)
 			if err != nil {
-				logger.Fatal(err)
+				service.logger.Fatal(err)
 			}
 		}
 	}
 
 }
 
-func LoadConfig() (*types.UserInstance, error) {
+func LoadConfig(appName string) (*types.UserInstance, error) {
 
-	PreLoadConfig()
-	if os.Args[len(os.Args)-1] == "reset" {
-		auth.Login()
-		logger.Info("Re-run the app to reload from configuration.")
-		return nil, errors.New("reload-configuration")
-	}
+	PreLoadConfig(appName)
 
 	username, token, backendUrl := "", "", ""
 	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok && appName == "lyrixd"{
 			// Config file not found; ignore error if desired
-			logger.Info("Did not find configuration file. Attempting to interactively create one")
+			service.logger.Info("Did not find configuration file. Attempting to interactively create one")
 			auth.Login()
 		} else {
-			logger.Fatal(err)
+			service.logger.Fatal(err)
 			return nil, err
 		}
 
@@ -68,20 +71,24 @@ func LoadConfig() (*types.UserInstance, error) {
 	username = viper.Get("Username").(string)
 	token = viper.Get("AuthToken").(string)
 	backendUrl = viper.Get("Host").(string)
-	if username == "" || token == "" || backendUrl == "" {
+	if (username == "" || token == "" || backendUrl == "") && appName == "lyrixd" {
 		auth.Login()
-		logger.Info("Re-run the app to reload from configuration.")
+		service.logger.Info("Re-run the app to reload from configuration.")
 		return nil, errors.New("reload-configuration")
 	}
 
-	configPath, absConfigPathYaml := GetLocalConfigPath()
+	configPath, absConfigPathYaml = GetLocalConfigPath(meta.AppName)
 	err := os.MkdirAll(configPath, 0o755)
 	if err != nil {
-		logger.Fatal(err)
+		service.logger.Fatal(err)
 	}
 
-	PostLoadConfig(absConfigPathYaml)
-
+	WriteConfig()
 	authInstance := &types.UserInstance{Username: username, Token: token, Host: backendUrl}
 	return authInstance, nil
+}
+
+
+func WriteConfig() {
+	PostLoadConfig(absConfigPathYaml)
 }
