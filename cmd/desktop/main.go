@@ -8,6 +8,8 @@ import (
 	"github.com/srevinsaju/lyrix/lyrixd/cmd/desktop/routes"
 	"github.com/srevinsaju/lyrix/lyrixd/config"
 	"github.com/webview/webview"
+	"os"
+	"path/filepath"
 )
 var logger = logging.GetLogger()
 
@@ -47,5 +49,16 @@ func main() {
 		suffix = "login"
 	}
 	w.Navigate(fmt.Sprintf("http://%s/%s", newAddress, suffix))
+	windowIcon := "AppDir/lyrix-desktop.png"
+	if os.Getenv("APPDIR") != "" {
+		appDir := os.Getenv("APPDIR")
+		windowIcon = filepath.Join(appDir, "lyrix-desktop.png")
+	}
+	err = setWindowIcon(w, windowIcon)
+	if err != nil {
+		logger.Warn("Error while setting window icon", err)
+	}
 	w.Run()
+
+
 }
