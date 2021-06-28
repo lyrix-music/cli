@@ -43,6 +43,11 @@ jobs:
         ./appimagetool*.AppImage squashfs-root
         cd ../..
 
+    - uses: actions/upload-artifact@v2
+      with:
+        name: Lyrix Desktop AppImage
+        path: cmd/desktop/Lyrix-x86_64.AppImage
+
     - name: Release
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
