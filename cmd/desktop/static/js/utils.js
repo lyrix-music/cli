@@ -31,6 +31,10 @@ $.postJSON = function(url, data, success, args) {
     return $.ajax(args);
 };
 
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
 
 // https://stackoverflow.com/q/14573223/
 function setCookie(name, value, days) {

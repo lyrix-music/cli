@@ -72,10 +72,13 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 	if playerIsPlaying && (song.Artist != artist || song.Track != title || !song.Playing) {
 		color.Green("%s by %s", title, artist)
 		color.HiBlack("%s\n", source)
-		player.PlayingSongHandler(
-			auth,
-			&types.SongMeta{Track: title, Artist: artist, Source: source, Url: url, Scrobble: ctx.Scrobble },
-		)
+		if auth != nil {
+			player.PlayingSongHandler(
+				auth,
+				&types.SongMeta{Track: title, Artist: artist, Source: source, Url: url, Scrobble: ctx.Scrobble },
+			)
+		}
+
 
 		if song.Track != "" {
 			// the previous saved song was not a blank song
@@ -99,14 +102,19 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 	} else if pl.GetPlaybackStatus() == "\"Paused\"" && song.Playing {
 		fmt.Println("Playback is paused now")
 		song.Playing = false
-		player.NotPlayingSongHandler(auth)
+		if auth != nil {
+			player.NotPlayingSongHandler(auth)
+		}
+
 	}
 	go func() {
 		// el
 		// logger.Info("pl.GetIdentity() == \"Elisa\" && ctx.LastFmEnabled && !ctx.Predicted", pl.GetIdentity() == "\"Elisa\"" && ctx.LastFmEnabled && !ctx.Predicted)
 		if pl.GetIdentity() == "\"Elisa\"" && ctx.LastFmEnabled && !ctx.Predicted  && song.Playing{
 			ctx.Predicted = true
-
+			if auth != nil {
+				return
+			}
 			similarSongs := player.GetSimilar(auth)
 			if len(similarSongs) == 0 {
 				return
@@ -161,7 +169,9 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 
 func cleanup(auth *types.UserInstance) {
 	logger.Info("Cleaning up. Sending clear events")
-	player.NotPlayingSongHandler(auth)
+	if auth != nil {
+		player.NotPlayingSongHandler(auth)
+	}
 	logger.Info("Done.")
 }
 

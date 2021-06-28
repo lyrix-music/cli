@@ -2,6 +2,14 @@ let currentTrack = ""
 let currentArtist = ""
 let currentPlayers = []
 
+$.get("/api/v1/user/logged-in", function(data) {
+    console.log("Received data from /user/logged-in")
+    if (data["logged_in"] === false) {
+        console.log("User is not logged in, disabling scrobble switch")
+        $("#scrobbleSwitchDiv").remove()
+    }
+}, "json")
+
 
 function playerChangedCallback(item) {
     console.log("Requesting server to change player")
@@ -10,8 +18,11 @@ function playerChangedCallback(item) {
     }
     $.postJSON("/api/v1/player", data, function () {
         console.log(`Player changed successfully, received ${data} as player name`)
-    })
+    }, { dataType: "text"})
     $(".dropdown").removeClass("is-active")
+    let playerName = item.text.replace("org.mpris.MediaPlayer2.", "")
+    $("#selected-music-player").text(capitalizeFirstLetter(playerName))
+
 
 }
 
@@ -45,6 +56,7 @@ function getPlayers() {
             dropdown.append(`<a class="dropdown-item">${item}</a>`)
         })
         $(".dropdown-item").click(function () { playerChangedCallback(this) })
+
     }, "json")
 }
 
@@ -85,9 +97,7 @@ $("#scrobbleSwitch").change(function () {
 $(".dropdown .button").click(function (){
     let dropdown = $(this).parents('.dropdown');
     dropdown.toggleClass('is-active');
-    dropdown.focusout(function() {
-        $(this).removeClass('is-active');
-    });
+
 });
 
 

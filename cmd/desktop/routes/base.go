@@ -60,7 +60,7 @@ func BuildServer(cfg *types.UserInstance) *fiber.App {
 	})
 
 	app.Post("/api/v1/config", func(c *fiber.Ctx) error {
-		err := json.Unmarshal(c.Body(), &cfg)
+		err := json.Unmarshal(c.Body(), cfg)
 		daemon.SetAuth(cfg)
 		if err != nil {
 			return err
