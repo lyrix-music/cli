@@ -9,7 +9,7 @@ func GetNewAddress() (port string, err error) {
 
 	// Create a new server without specifying a port
 	// which will result in an open port being chosen
-	server, err := net.Listen("tcp4", ":0")
+	server, err := net.Listen("tcp4", "127.0.0.1:")
 
 	// If there's an error it likely means no ports
 	// are available or something else prevented finding

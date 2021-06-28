@@ -67,6 +67,7 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 	}
 	title := metadata["xesam:title"].Value().(string)
 	playerIsPlaying := pl.GetPlaybackStatus() == "\"Playing\""
+	artist = strings.Replace(artist, " - Topic", "", -1)
 
 	if playerIsPlaying && (song.Artist != artist || song.Track != title || !song.Playing) {
 		color.Green("%s by %s", title, artist)
