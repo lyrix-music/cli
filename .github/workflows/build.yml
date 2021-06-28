@@ -27,6 +27,8 @@ jobs:
 
     - name: Build Desktop AppImage
       run: |
+        # install some build time dependencies
+        sudo apt-get -qy install libwebkit2gtk-4.0-dev  build-essential libgtk-3-dev
         cd cmd/desktop
         go build -ldflags "-s -w" .
         cp AppDir squashfs-root -r
