@@ -1,3 +1,4 @@
 desktop
 squashfs-root
 *.AppImage
+/lyrix-desktop.desktop
