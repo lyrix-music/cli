@@ -36,6 +36,11 @@ jobs:
     - name: Build Desktop AppImage
       run: |
         cd cmd/desktop
+
+        # copy the styles
+        mkdir -p static/css
+        wget https://raw.githubusercontent.com/lyrix-music/styles/main/css/lyrix.css -O static/css/lyrix.css
+
         go build -ldflags "-s -w" .
         cp AppDir squashfs-root -r
         cp ./desktop squashfs-root/lyrix-desktop
