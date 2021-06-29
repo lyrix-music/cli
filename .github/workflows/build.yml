@@ -25,11 +25,13 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.15
+        go-version: 1.16
 
     - name: Build
       run: |
+        cd cmd/cli
         go build -ldflags "-s -w" .
+        cd ../..
 
     - name: Build Desktop AppImage
       run: |
@@ -54,6 +56,6 @@ jobs:
       run: |
         wget https://github.com/TheAssassin/pyuploadtool/releases/download/continuous/pyuploadtool-x86_64.AppImage
         chmod +x pyuploadtool-x86_64.AppImage
-        ./pyuploadtool-x86_64.AppImage lyrixd cmd/desktop/Lyrix*.AppImage
+        ./pyuploadtool-x86_64.AppImage cmd/cli/cli cmd/desktop/Lyrix*.AppImage
 
 
