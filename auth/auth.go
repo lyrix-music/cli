@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/lyrix-music/cli/types"
 	"github.com/spf13/viper"
-	"github.com/srevinsaju/lyrix/lyrixd/types"
 	"github.com/withmandala/go-log"
 )
 
@@ -51,8 +51,6 @@ func Login() {
 		Message: "Enter Password:",
 	}
 	survey.AskOne(passwordPrompt, &password)
-
-
 
 	jsonStr, err := json.Marshal(types.UserLoginRequest{Username: username, Password: password})
 	if err != nil {

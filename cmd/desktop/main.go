@@ -2,17 +2,17 @@ package main
 
 import (
 	"fmt"
-	"github.com/srevinsaju/lyrix/lyrixd/cmd/desktop/daemon"
-	"github.com/srevinsaju/lyrix/lyrixd/cmd/desktop/logging"
-	"github.com/srevinsaju/lyrix/lyrixd/cmd/desktop/meta"
-	"github.com/srevinsaju/lyrix/lyrixd/cmd/desktop/routes"
-	"github.com/srevinsaju/lyrix/lyrixd/config"
+	"github.com/lyrix-music/cli/cmd/desktop/daemon"
+	"github.com/lyrix-music/cli/cmd/desktop/logging"
+	"github.com/lyrix-music/cli/cmd/desktop/meta"
+	"github.com/lyrix-music/cli/cmd/desktop/routes"
+	"github.com/lyrix-music/cli/config"
 	"github.com/webview/webview"
 	"os"
 	"path/filepath"
 )
-var logger = logging.GetLogger()
 
+var logger = logging.GetLogger()
 
 func main() {
 	auth, err := config.Load(meta.AppName)
@@ -59,6 +59,5 @@ func main() {
 		logger.Warn("Error while setting window icon", err)
 	}
 	w.Run()
-
 
 }

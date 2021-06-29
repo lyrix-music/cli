@@ -134,8 +134,8 @@ type LoopStatus string
 
 const (
 	LoopNone     LoopStatus = "None"
-	LoopTrack LoopStatus = "Track"
-	LoopPlaylist LoopStatus= "Playlist"
+	LoopTrack    LoopStatus = "Track"
+	LoopPlaylist LoopStatus = "Playlist"
 )
 
 func (i *player) GetLoopStatus() LoopStatus {

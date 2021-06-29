@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/srevinsaju/lyrix/lyrixd/auth"
-	"github.com/srevinsaju/lyrix/lyrixd/config"
-	"github.com/srevinsaju/lyrix/lyrixd/meta"
-	"github.com/srevinsaju/lyrix/lyrixd/service"
+	"github.com/lyrix-music/cli/auth"
+	"github.com/lyrix-music/cli/config"
+	"github.com/lyrix-music/cli/meta"
+	"github.com/lyrix-music/cli/service"
 
 	"github.com/urfave/cli/v2"
 	"github.com/withmandala/go-log"
@@ -12,7 +12,6 @@ import (
 )
 
 var logger = log.New(os.Stdout)
-
 
 func main() {
 	app := &cli.App{
@@ -23,14 +22,13 @@ func main() {
 			&cli.BoolFlag{
 				Name: "lastfm-predict",
 				Usage: "Use Last.fm suggestions to dynamically modify playlists " +
-					   "according to your current playing track. (only KDE Elisa)",
+					"according to your current playing track. (only KDE Elisa)",
 			},
 
 			&cli.BoolFlag{
-				Name: "lastfm-scrobble",
+				Name:  "lastfm-scrobble",
 				Usage: "Send your current listening song to last fm to get customized tracks",
 			},
-
 		},
 		Commands: []*cli.Command{
 			{
@@ -40,10 +38,10 @@ func main() {
 					return nil
 				},
 			},
-            {
+			{
 				Name: "login",
 				Action: func(c *cli.Context) error {
-                    auth.Login()
+					auth.Login()
 					return nil
 				},
 			},

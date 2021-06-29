@@ -8,12 +8,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/srevinsaju/lyrix/lyrixd/types"
+	"github.com/lyrix-music/cli/types"
 	"github.com/withmandala/go-log"
-
 )
-
-
 
 var logger = log.New(os.Stdout)
 var client = &http.Client{}
@@ -56,8 +53,6 @@ func PlayingSongHandler(auth *types.UserInstance, song *types.SongMeta) {
 	}
 	defer resp.Body.Close()
 }
-
-
 
 func GetSimilar(auth *types.UserInstance) []types.SongMeta {
 	// do not do anything for a user who havent auth'd yet.

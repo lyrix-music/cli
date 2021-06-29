@@ -3,13 +3,13 @@ package config
 import (
 	"errors"
 	"fmt"
-	"github.com/srevinsaju/lyrix/lyrixd/cmd/desktop/logging"
+	"github.com/lyrix-music/cli/cmd/desktop/logging"
 	"os"
 	"path/filepath"
 
+	"github.com/lyrix-music/cli/auth"
+	"github.com/lyrix-music/cli/types"
 	"github.com/spf13/viper"
-	"github.com/srevinsaju/lyrix/lyrixd/auth"
-	"github.com/srevinsaju/lyrix/lyrixd/types"
 )
 
 var logger = logging.GetLogger()
@@ -28,8 +28,8 @@ func GetPath(appName string) (string, string) {
 
 func Preload(appName string) {
 	// load the configuration
-	viper.SetConfigName("config")                      // name of config file (without extension)
-	viper.SetConfigType("yaml")                        // REQUIRED if the config file does not have the extension in the name
+	viper.SetConfigName("config")                                        // name of config file (without extension)
+	viper.SetConfigType("yaml")                                          // REQUIRED if the config file does not have the extension in the name
 	viper.AddConfigPath(fmt.Sprintf("$HOME/.config/lyrix/%s/", appName)) // call multiple times to add many search paths
 	viper.AddConfigPath(fmt.Sprintf("/etc/lyrix/%s/", appName))          // path to look for the config file in
 	viper.AddConfigPath(".")
@@ -59,7 +59,7 @@ func Load(appName string) (*types.UserInstance, error) {
 	}
 	username, token, backendUrl := "", "", ""
 	if err := viper.ReadInConfig(); err != nil {
-		_, ok := err.(viper.ConfigFileNotFoundError);
+		_, ok := err.(viper.ConfigFileNotFoundError)
 		if ok && appName == "lyrixd" {
 			// Config file not found; ignore error if desired
 			logger.Info("Did not find configuration file. Attempting to interactively create one")
@@ -72,7 +72,6 @@ func Load(appName string) (*types.UserInstance, error) {
 			logger.Fatal(err)
 			return nil, err
 		}
-
 
 	}
 
@@ -89,7 +88,6 @@ func Load(appName string) (*types.UserInstance, error) {
 	authInstance := &types.UserInstance{Username: username, Token: token, Host: backendUrl}
 	return authInstance, nil
 }
-
 
 func Write() {
 	write(absConfigPathYaml)

@@ -6,10 +6,10 @@ import (
 	"github.com/gofiber/fiber/v2"
 	logger2 "github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/template/django"
-	"github.com/srevinsaju/lyrix/lyrixd/cmd/desktop/daemon"
-	"github.com/srevinsaju/lyrix/lyrixd/cmd/desktop/logging"
-	"github.com/srevinsaju/lyrix/lyrixd/mpris"
-	"github.com/srevinsaju/lyrix/lyrixd/types"
+	"github.com/lyrix-music/cli/cmd/desktop/daemon"
+	"github.com/lyrix-music/cli/cmd/desktop/logging"
+	"github.com/lyrix-music/cli/mpris"
+	"github.com/lyrix-music/cli/types"
 	sl "github.com/srevinsaju/swaglyrics-go"
 	sltypes "github.com/srevinsaju/swaglyrics-go/types"
 	"os"
@@ -17,7 +17,6 @@ import (
 )
 
 var logger = logging.GetLogger()
-
 
 func BuildServer(cfg *types.UserInstance) *fiber.App {
 	templatesDir := "templates"
@@ -47,7 +46,7 @@ func BuildServer(cfg *types.UserInstance) *fiber.App {
 
 	app.Get("/api/v1/user/logged-in", func(c *fiber.Ctx) error {
 		loginStatus := daemon.GetAuth() != nil
-		return c.JSON(map[string]bool {
+		return c.JSON(map[string]bool{
 			"logged_in": loginStatus,
 		})
 	})

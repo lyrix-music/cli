@@ -13,8 +13,6 @@ import (
 	"github.com/webview/webview"
 )
 
-
-
 // from https://github.com/gotk3/gotk3/blob/86f85cbecd0b990beab32a3471kb08ad3cdd8f93b/gtk/window.go#L531
 func setWindowIcon(w webview.WebView, filename string) error {
 	window := w.Window()

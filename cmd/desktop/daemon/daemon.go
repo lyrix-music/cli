@@ -2,12 +2,13 @@ package daemon
 
 import (
 	"github.com/godbus/dbus/v5"
-	"github.com/srevinsaju/lyrix/lyrixd/config"
-	"github.com/srevinsaju/lyrix/lyrixd/mpris"
-	"github.com/srevinsaju/lyrix/lyrixd/service"
-	"github.com/srevinsaju/lyrix/lyrixd/types"
+	"github.com/lyrix-music/cli/config"
+	"github.com/lyrix-music/cli/mpris"
+	"github.com/lyrix-music/cli/service"
+	"github.com/lyrix-music/cli/types"
 	"github.com/withmandala/go-log"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -28,7 +29,6 @@ func SetScrobbleEnabled(enabled bool) {
 	ctx.Scrobble = enabled
 }
 
-
 // SetAuth sets the authorization instance
 func SetAuth(a *types.UserInstance) {
 	auth = a
@@ -37,7 +37,6 @@ func SetAuth(a *types.UserInstance) {
 	config.Set("Host", a.Host)
 	config.Write()
 }
-
 
 // GetAuth returns the registerd authorization details
 func GetAuth() *types.UserInstance {
@@ -56,7 +55,6 @@ func SetPlayer(dbusId string) string {
 	return player.GetIdentity()
 }
 
-
 // Start loop the daemon process until all the parameters
 // are successfull met
 func Start() {
@@ -65,11 +63,19 @@ func Start() {
 	if err != nil {
 		panic(err)
 	}
+
+	// try to get app icon
+	appIcon := ""
+	if os.Getenv("APPDIR") != "" {
+		appIcon = filepath.Join(os.Getenv("APPDIR"), "lyrix-desktop.png")
+	}
+
 	ctx = &service.Context{
 		LastFmEnabled: false,
 		Predicted:     false,
 		Tui:           false,
 		Scrobble:      false,
+		AppIcon:       appIcon,
 	}
 	song = &types.SongMeta{
 		Playing:  false,
@@ -85,7 +91,6 @@ func Start() {
 	}
 
 }
-
 
 func daemon() {
 	var err error

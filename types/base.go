@@ -22,10 +22,10 @@ type UserInstance struct {
 }
 
 type SongMeta struct {
-	Playing bool
-	Track   string `json:"track"`
-	Artist  string `json:"artist"`
-	Source  string `json:"source,omitempty"`
-	Url     string `json:"url,omitempty"`
-	Scrobble bool `json:"scrobble,omitempty"`
+	Playing  bool
+	Track    string `json:"track"`
+	Artist   string `json:"artist"`
+	Source   string `json:"source,omitempty"`
+	Url      string `json:"url,omitempty"`
+	Scrobble bool   `json:"scrobble,omitempty"`
 }

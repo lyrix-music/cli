@@ -1,4 +1,4 @@
-module github.com/srevinsaju/lyrix/lyrixd
+module github.com/lyrix-music/cli
 
 go 1.16
 

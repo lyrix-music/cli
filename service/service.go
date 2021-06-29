@@ -8,11 +8,11 @@ import (
 	"github.com/fatih/color"
 	"github.com/gen2brain/beeep"
 	"github.com/godbus/dbus/v5"
-	"github.com/srevinsaju/lyrix/lyrixd/config"
-	"github.com/srevinsaju/lyrix/lyrixd/meta"
-	"github.com/srevinsaju/lyrix/lyrixd/mpris"
-	"github.com/srevinsaju/lyrix/lyrixd/player"
-	"github.com/srevinsaju/lyrix/lyrixd/types"
+	"github.com/lyrix-music/cli/config"
+	"github.com/lyrix-music/cli/meta"
+	"github.com/lyrix-music/cli/mpris"
+	"github.com/lyrix-music/cli/player"
+	"github.com/lyrix-music/cli/types"
 	"github.com/urfave/cli/v2"
 	"github.com/withmandala/go-log"
 	"os"
@@ -28,14 +28,14 @@ var logger = log.New(os.Stdout)
 
 type Context struct {
 	LastFmEnabled bool
-	Predicted bool
-	Tui bool
-	Scrobble bool
-
+	Predicted     bool
+	Tui           bool
+	Scrobble      bool
+	AppIcon       string
 }
 type DaemonOptions struct {
-
 }
+
 func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Player, song *types.SongMeta) error {
 
 	usr, _ := user.Current()
@@ -75,10 +75,9 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 		if auth != nil {
 			player.PlayingSongHandler(
 				auth,
-				&types.SongMeta{Track: title, Artist: artist, Source: source, Url: url, Scrobble: ctx.Scrobble },
+				&types.SongMeta{Track: title, Artist: artist, Source: source, Url: url, Scrobble: ctx.Scrobble},
 			)
 		}
-
 
 		if song.Track != "" {
 			// the previous saved song was not a blank song
@@ -90,7 +89,7 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 			} else {
 				message = "Now playing"
 			}
-			err := beeep.Notify(fmt.Sprintf("%s by %s", title, artist), message, "")
+			err := beeep.Notify(fmt.Sprintf("%s by %s", title, artist), message, ctx.AppIcon)
 			if err != nil {
 				logger.Warn(err)
 			}
@@ -110,7 +109,7 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 	go func() {
 		// el
 		// logger.Info("pl.GetIdentity() == \"Elisa\" && ctx.LastFmEnabled && !ctx.Predicted", pl.GetIdentity() == "\"Elisa\"" && ctx.LastFmEnabled && !ctx.Predicted)
-		if pl.GetIdentity() == "\"Elisa\"" && ctx.LastFmEnabled && !ctx.Predicted  && song.Playing{
+		if pl.GetIdentity() == "\"Elisa\"" && ctx.LastFmEnabled && !ctx.Predicted && song.Playing {
 			ctx.Predicted = true
 			if auth != nil {
 				return
@@ -163,7 +162,6 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 		}
 	}()
 
-
 	return nil
 }
 
@@ -175,13 +173,11 @@ func cleanup(auth *types.UserInstance) {
 	logger.Info("Done.")
 }
 
-
 // move this piece to lyrixd spec
 func StartDaemon(c *cli.Context) error {
-
 	ctx := &Context{
 		LastFmEnabled: c.Bool("lastfm-predict"),
-		Scrobble: c.Bool("lastfm-scrobble"),
+		Scrobble:      c.Bool("lastfm-scrobble"),
 	}
 
 	auth, err := config.Load(meta.AppName)
@@ -196,7 +192,6 @@ func StartDaemon(c *cli.Context) error {
 	ch := make(chan os.Signal)
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
 
-
 	if auth != nil {
 		go func() {
 			<-ch
@@ -204,7 +199,6 @@ func StartDaemon(c *cli.Context) error {
 			os.Exit(1)
 		}()
 	}
-
 
 	// id of the music player from dbus
 	mpDbusId := ""
@@ -250,9 +244,5 @@ func StartDaemon(c *cli.Context) error {
 		}
 	}
 
-
 	return nil
 }
-
-
-
