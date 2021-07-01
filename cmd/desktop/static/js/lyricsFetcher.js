@@ -18,7 +18,7 @@ $(document).ready(function() {
         console.log("Received data from /user/logged-in")
         if (data["logged_in"] === false) {
             console.log("User is not logged in, disabling scrobble switch")
-            $("#scrobbleSwitchDiv").remove()
+            $(".requires-auth").remove()
         } else {
             $("#navBarLoginButton").remove()
         }

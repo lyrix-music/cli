@@ -33,11 +33,20 @@ func main() {
 	if err != nil {
 		logger.Fatal(err)
 	}
+
+
+	logger.Infof("Attempting to use '%s'", newAddress)
+
+	if os.Getenv("LYRIX_SERVER_ONLY") == "1" {
+		app.Listen(newAddress)
+		return
+	}
+
+
 	go func() {
 		app.Listen(newAddress)
 	}()
 
-	logger.Infof("Attempting to use '%s'", newAddress)
 	// create the web application instance
 	debug := true
 	w := webview.New(debug)

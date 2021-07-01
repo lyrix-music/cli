@@ -9,6 +9,7 @@ import (
 	"github.com/lyrix-music/cli/cmd/desktop/daemon"
 	"github.com/lyrix-music/cli/cmd/desktop/logging"
 	"github.com/lyrix-music/cli/mpris"
+	"github.com/lyrix-music/cli/player"
 	"github.com/lyrix-music/cli/types"
 	sl "github.com/srevinsaju/swaglyrics-go"
 	sltypes "github.com/srevinsaju/swaglyrics-go/types"
@@ -37,6 +38,11 @@ func BuildServer(cfg *types.UserInstance) *fiber.App {
 	app.Get("/login", func(c *fiber.Ctx) error {
 		// Render index
 		return c.Render("login", fiber.Map{})
+	})
+
+	app.Get("/similar", func(c *fiber.Ctx) error {
+		// Render index
+		return c.Render("similar", fiber.Map{})
 	})
 
 	app.Get("/register", func(c *fiber.Ctx) error {
@@ -88,13 +94,21 @@ func BuildServer(cfg *types.UserInstance) *fiber.App {
 		return c.SendString(playerName)
 	})
 
+	app.Get("/api/v1/song/similar", func(c *fiber.Ctx) error {
+		auth := daemon.GetAuth()
+		if auth == nil {
+			return c.SendStatus(fiber.StatusUnauthorized)
+		}
+		return c.JSON(player.GetSimilar(auth))
+	})
+
 	app.Get("/api/v1/player", func(c *fiber.Ctx) error {
-		player := daemon.GetPlayer()
-		if player == nil {
-			logger.Warn("The received player is nil. No media players detected")
+		localPlayer := daemon.GetPlayer()
+		if localPlayer == nil {
+			logger.Warn("The received localPlayer is nil. No media players detected.")
 			return c.SendStatus(fiber.StatusInternalServerError)
 		}
-		return c.JSON(player.GetIdentity())
+		return c.JSON(localPlayer.GetIdentity())
 	})
 
 	app.Get("/api/v1/updates/players", func(c *fiber.Ctx) error {
