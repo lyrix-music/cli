@@ -10,6 +10,7 @@ import (
 	"errors"
 	"unsafe"
 
+	"github.com/toqueteos/webbrowser"
 	"github.com/webview/webview"
 )
 
@@ -26,4 +27,10 @@ func setWindowIcon(w webview.WebView, filename string) error {
 		return errors.New(C.GoString((*C.char)(err.message)))
 	}
 	return nil
+}
+
+
+// open opens the specified URL in the default browser of the user.
+func open(url string) error {
+	return webbrowser.Open(url)
 }

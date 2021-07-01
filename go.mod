@@ -12,6 +12,7 @@ require (
 	github.com/gofiber/template v1.6.12
 	github.com/spf13/viper v1.7.1
 	github.com/srevinsaju/swaglyrics-go v0.0.0-20210622060022-649d049cd475
+	github.com/toqueteos/webbrowser v1.2.0
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/webview/webview v0.0.0-20210330151455-f540d88dde4e
 	github.com/withmandala/go-log v0.1.0

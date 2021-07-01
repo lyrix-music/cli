@@ -53,6 +53,15 @@ func main() {
 	defer w.Destroy()
 	w.SetTitle("Lyrixd")
 	w.SetSize(600, 800, webview.HintNone)
+	err = w.Bind("open", open)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	err = w.Bind("iswebview", func() bool { return true })
+	if err != nil {
+		logger.Fatal(err)
+	}
+
 	suffix := ""
 	if auth == nil {
 		suffix = "login"

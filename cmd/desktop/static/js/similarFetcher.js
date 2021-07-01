@@ -7,13 +7,13 @@ let hexValues = ["0","1","2","3","4","5","6","7","8","9","a","b","c","d","e"];
 
 
 function getSongHTML(track, artist){
+    let encodeSearchString = encodeURI(track + " " + artist)
     return `<div class="card mb-3">
         <div class="card-content">
             <div class="media">
                 <div class="media-left">
                     <div 
-                        data-artist="${artist}"
-                        data-track="${track}"
+                        data-track="${makeSafeForCSS(track)}"
                         class="image is-48x48 album-art-square">
                     </div>
                 </div>
@@ -25,12 +25,26 @@ function getSongHTML(track, artist){
             
         </div>
         <footer class="card-footer">
-            <a class="card-footer-item" data-artist="${artist}" data-track="${track}">
-              <span class="icon"><i class="fas fa-play"></i></span>Play Next</a>
-            <a class="card-footer-item" data-artist="${artist}" data-track="${track}">
-              <span class="icon"><i class="fas fa-download"></i></span>Download</a>
-            <a class="card-footer-item" data-artist="${artist}" data-track="${track}">
-              <span class="icon"><i class="fas fa-heart"></i></span>Like</a>
+            <a class="card-footer-item music-service-provider" target="_blank"
+                href="https://music.youtube.com/search?q=${encodeSearchString}">
+              <span class="icon"><i class="fas fa-record-vinyl"></i></span>
+              <span class="is-hidden-touch">Youtube Music</span>
+            </a>
+            <a class="card-footer-item music-service-provider" target="_blank"
+                href="https://open.spotify.com/search/${encodeSearchString}"
+              <span class="icon"><i class="fab fa-spotify"></i></span>
+               <span class="is-hidden-touch">Spotify</span>
+            </a>
+            <a class="card-footer-item music-service-provider" target="_blank"
+                href="https://www.youtube.com/results?search_query=${encodeSearchString}">
+              <span class="icon"><i class="fab fa-youtube"></i></span>
+               <span class="is-hidden-touch">Youtube</span>
+            </a>
+            <a class="card-footer-item music-service-provider" target="_blank"
+                href="https://soundcloud.com/search?q=${encodeSearchString}">
+              <span class="icon"><i class="fab fa-soundcloud"></i></span>
+               <span class="is-hidden-touch">Soundcloud</span>  
+            </a>
         </footer>
     </div>`
 }
@@ -66,14 +80,30 @@ $(document).ready(function() {
                 if (item["track"] === "") {
                     return
                 }
+
                 similarContainer.append(getSongHTML(item["track"], item["artist"]))
-                console.log(item["track"], item["artist"], item["album_art"], item["mbid"])
 
             })
             data.forEach(function(item) {
                 setAlbumArtGradient(item["track"])
 
             })
+            iswebview().then((x) => {
+                console.log("Detected webview running", x)
+                if (x === false) {
+                    return
+                }
+                console.log("Setting on click ")
+                $(".music-service-provider").on('click', function (e) {
+                    e.preventDefault();
+                    let url = $(this).attr("href")
+                    $(this).addClass("is-loading")
+                    console.log("clicked on", url)
+                    open(url)
+                })
+            })
+
+
             // $(".lyrics").html(data.replaceAll("\n", "<br>"))
         }, "json")
 
@@ -139,7 +169,16 @@ function setAlbumArtGradient(track, artist) {
     let angle = Math.round( Math.random() * 360 );
 
     let gradient = "linear-gradient(" + angle + "deg, " + newColor1 + ", " + newColor2 + ")";
-    $(`div[data-track="${track}"]`).css('background', gradient);
+    $(`div[data-track="${makeSafeForCSS(track)}"]`).css('background', gradient);
 
 }
 
+
+function makeSafeForCSS(name) {
+    return name.replace(/[^a-z0-9]/g, function(s) {
+        var c = s.charCodeAt(0);
+        if (c === 32) return '-';
+        if (c >= 65 && c <= 90) return '_' + s.toLowerCase();
+        return '__' + ('000' + c.toString(16)).slice(-4);
+    });
+}
