@@ -7,6 +7,7 @@ import (
 	"github.com/lyrix-music/cli/cmd/desktop/meta"
 	"github.com/lyrix-music/cli/cmd/desktop/routes"
 	"github.com/lyrix-music/cli/config"
+	"github.com/lyrix-music/cli/types"
 	"github.com/webview/webview"
 	"os"
 	"path/filepath"
@@ -22,6 +23,8 @@ func main() {
 	}
 	if auth != nil {
 		daemon.SetAuth(auth)
+	} else {
+		auth = &types.UserInstance{}
 	}
 
 	// launch the daemon to discover changes in the current listening song
@@ -34,14 +37,12 @@ func main() {
 		logger.Fatal(err)
 	}
 
-
 	logger.Infof("Attempting to use '%s'", newAddress)
 
 	if os.Getenv("LYRIX_SERVER_ONLY") == "1" {
 		app.Listen(newAddress)
 		return
 	}
-
 
 	go func() {
 		app.Listen(newAddress)

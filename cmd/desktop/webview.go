@@ -29,7 +29,6 @@ func setWindowIcon(w webview.WebView, filename string) error {
 	return nil
 }
 
-
 // open opens the specified URL in the default browser of the user.
 func open(url string) error {
 	return webbrowser.Open(url)
