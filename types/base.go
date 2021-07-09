@@ -32,4 +32,5 @@ type SongMeta struct {
 	Mbid       string `json:"mbid,omitempty"`
 	ArtistMbid string `json:"artist_mbid,omitempty"`
 	Position int64
+	IsRepeat bool `json:"is_repeat"`
 }

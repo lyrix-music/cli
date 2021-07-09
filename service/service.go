@@ -71,17 +71,26 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 
 	position := pl.GetPosition()
 
-	if playerIsPlaying && (song.Artist != artist || song.Track != title || !song.Playing || position < song.Position) {
+	isRepeat := position < song.Position && song.Artist == artist && song.Track == title
+	if playerIsPlaying && (song.Artist != artist || song.Track != title || !song.Playing || isRepeat) {
 		color.Green("%s by %s", title, artist)
 		color.HiBlack("%s\n", source)
-		if position < song.Position && song.Artist == artist && song.Track == title {
+		if isRepeat {
 			color.HiBlack("on Repeat.")
 		}
 		song.Position = position
+		song.IsRepeat = isRepeat
 		if auth != nil {
 			player.PlayingSongHandler(
 				auth,
-				&types.SongMeta{Track: title, Artist: artist, Source: source, Url: url, Scrobble: ctx.Scrobble, Position: position},
+				&types.SongMeta{
+					Track: title,
+					Artist: artist,
+					Source: source,
+					Url: url,
+					Scrobble: ctx.Scrobble,
+					IsRepeat: isRepeat,
+					Position: position},
 			)
 		}
 
@@ -94,6 +103,10 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 				message = "Now scrobbling"
 			} else {
 				message = "Now playing"
+			}
+
+			if isRepeat {
+				message += " on repeat"
 			}
 			err := beeep.Notify(fmt.Sprintf("%s by %s", title, artist), message, ctx.AppIcon)
 			if err != nil {
