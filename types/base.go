@@ -31,4 +31,5 @@ type SongMeta struct {
 	AlbumArt   string `json:"album_art,omitempty"`
 	Mbid       string `json:"mbid,omitempty"`
 	ArtistMbid string `json:"artist_mbid,omitempty"`
+	Position int64
 }

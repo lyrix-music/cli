@@ -69,13 +69,19 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 	playerIsPlaying := pl.GetPlaybackStatus() == "\"Playing\""
 	artist = strings.Replace(artist, " - Topic", "", -1)
 
-	if playerIsPlaying && (song.Artist != artist || song.Track != title || !song.Playing) {
+	position := pl.GetPosition()
+
+	if playerIsPlaying && (song.Artist != artist || song.Track != title || !song.Playing || position < song.Position) {
 		color.Green("%s by %s", title, artist)
 		color.HiBlack("%s\n", source)
+		if position < song.Position && song.Artist == artist && song.Track == title {
+			color.HiBlack("on Repeat.")
+		}
+		song.Position = position
 		if auth != nil {
 			player.PlayingSongHandler(
 				auth,
-				&types.SongMeta{Track: title, Artist: artist, Source: source, Url: url, Scrobble: ctx.Scrobble},
+				&types.SongMeta{Track: title, Artist: artist, Source: source, Url: url, Scrobble: ctx.Scrobble, Position: position},
 			)
 		}
 

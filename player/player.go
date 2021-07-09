@@ -16,7 +16,7 @@ var logger = log.New(os.Stdout)
 var client = &http.Client{}
 
 func NotPlayingSongHandler(auth *types.UserInstance) {
-	song := &types.SongMeta{Track: "", Artist: ""}
+	song := &types.SongMeta{Track: "", Artist: "", Position: 0}
 	PlayingSongHandler(auth, song)
 }
 
