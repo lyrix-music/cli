@@ -192,8 +192,8 @@ func cleanup(auth *types.UserInstance) {
 	logger.Info("Done.")
 }
 
-// move this piece to lyrixd spec
 func StartDaemon(c *cli.Context) error {
+	// TODO move this piece to lyrixd spec
 	ctx := &Context{
 		LastFmEnabled: c.Bool("lastfm-predict"),
 		Scrobble:      c.Bool("lastfm-scrobble"),
