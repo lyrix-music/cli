@@ -14,13 +14,29 @@ $(document).ready(function() {
     });
 
 
+    console.log("Restoring old values")
+    if (window.localStorage.getItem("scrobble") === "true") {
+        // restore the last scrobbled track
+        console.log("Restoring scrobble");
+        $("#scrobbleSwitch").prop("checked", true)
+    }
+
+    let lastChosenPlayer = window.localStorage.getItem("lastChosenPlayer")
+    if (lastChosenPlayer !== null && lastChosenPlayer !== "") {
+        console.log("Restoring last player: " + lastChosenPlayer)
+        let playerName = lastChosenPlayer.replace("org.mpris.MediaPlayer2.", "")
+        $("#selected-music-player").text(capitalizeFirstLetter(playerName))
+        $(".dropdown").removeClass("is-active")
+
+    }
+
     $.get("/api/v1/user/logged-in", function(data) {
         console.log("Received data from /user/logged-in")
         if (data["logged_in"] === false) {
             console.log("User is not logged in, disabling scrobble switch")
             $(".requires-auth").remove()
         } else {
-            $("#navBarLoginButton").remove()
+            $("#navBarLoginButton").text("Logout")
         }
     }, "json")
 
@@ -34,10 +50,9 @@ $(document).ready(function() {
             console.log(`Player changed successfully, received ${data} as player name`)
         }, { dataType: "text"})
         $(".dropdown").removeClass("is-active")
+        window.localStorage.setItem("lastChosenPlayer", item.text)
         let playerName = item.text.replace("org.mpris.MediaPlayer2.", "")
         $("#selected-music-player").text(capitalizeFirstLetter(playerName))
-
-
     }
 
     function setScrobble(enabled) {
@@ -45,6 +60,7 @@ $(document).ready(function() {
         $.post(`/api/v1/prefs/scrobble/${enabled}`, "", function () {
             console.log("Player changed successfully")
         }, "text")
+        window.localStorage.setItem("scrobble", enabled)
     }
 
 
