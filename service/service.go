@@ -3,6 +3,14 @@ package service
 import (
 	"errors"
 	"fmt"
+	"os"
+	"os/exec"
+	"os/signal"
+	"os/user"
+	"strings"
+	"syscall"
+	"time"
+
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/adrg/xdg"
 	"github.com/fatih/color"
@@ -15,13 +23,6 @@ import (
 	"github.com/lyrix-music/cli/types"
 	"github.com/urfave/cli/v2"
 	"github.com/withmandala/go-log"
-	"os"
-	"os/exec"
-	"os/signal"
-	"os/user"
-	"strings"
-	"syscall"
-	"time"
 )
 
 var logger = log.New(os.Stdout)
@@ -37,9 +38,6 @@ type DaemonOptions struct {
 }
 
 func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Player, song *types.SongMeta) error {
-
-	usr, _ := user.Current()
-	dir := usr.HomeDir
 
 	metadata, ok := pl.GetMetadata()
 	if !ok {
@@ -84,10 +82,10 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 			player.PlayingSongHandler(
 				auth,
 				&types.SongMeta{
-					Track: title,
-					Artist: artist,
-					Source: source,
-					Url: url,
+					Track:    title,
+					Artist:   artist,
+					Source:   source,
+					Url:      url,
 					Scrobble: ctx.Scrobble,
 					IsRepeat: isRepeat,
 					Position: position},
@@ -128,60 +126,71 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 	go func() {
 		// el
 		// logger.Info("pl.GetIdentity() == \"Elisa\" && ctx.LastFmEnabled && !ctx.Predicted", pl.GetIdentity() == "\"Elisa\"" && ctx.LastFmEnabled && !ctx.Predicted)
-		if pl.GetIdentity() == "\"Elisa\"" && ctx.LastFmEnabled && !ctx.Predicted && song.Playing {
+		if ctx.LastFmEnabled && !ctx.Predicted && song.Playing {
 			ctx.Predicted = true
 			if auth != nil {
 				return
 			}
 			similarSongs := player.GetSimilar(auth)
-			if len(similarSongs) == 0 {
-				return
-			}
-
-			for i := range similarSongs {
-				go func(j int) {
-					if similarSongs[j].Track == "" || similarSongs[j].Artist == "" {
-						return
-					}
-					searchString := fmt.Sprintf("%s %s", similarSongs[j].Track, similarSongs[j].Artist)
-					searchCommand := exec.Command(
-						"baloosearch",
-						"-d", strings.Replace(xdg.UserDirs.Music, "~", dir, -1),
-						searchString)
-					out, err := searchCommand.CombinedOutput()
-					if err != nil {
-						logger.Warnf("Failed to execute '%s'", searchCommand.String())
-						logger.Warn(err, fmt.Sprintf("%s", out))
-						return
-					}
-					output := string(out[:])
-					s := strings.Split(output, "\n")[0]
-					if strings.HasPrefix(s, "Elapsed") {
-						// baloosearch didnt give a valid output
-						// just suggest this song to the user
-
-						color.HiBlack("Suggestion:")
-						color.Yellow("%s by %s", similarSongs[j].Track, similarSongs[j].Artist)
-						fmt.Println("")
-
-						return
-					}
-					// the baloosearch found an answer
-					color.HiBlack("Queued:")
-					color.Green("%s by %s", similarSongs[j].Track, similarSongs[j].Artist)
-					fmt.Println("")
-					err = exec.Command("elisa", s).Run()
-					if err != nil {
-						logger.Warn(err)
-					}
-
-				}(i)
-
-			}
+			QueueSimilarSongs(similarSongs, pl)
 		}
 	}()
 
 	return nil
+}
+
+func QueueSimilarSongs(similarSongs []types.SongMeta, pl *mpris.Player) {
+	usr, _ := user.Current()
+	dir := usr.HomeDir
+
+	// we support elisa music player only at the moment
+	if pl.GetIdentity() != "\"Elisa\"" {
+		return
+	}
+	if len(similarSongs) == 0 {
+		return
+	}
+
+	for i := range similarSongs {
+		go func(j int) {
+			if similarSongs[j].Track == "" || similarSongs[j].Artist == "" {
+				return
+			}
+			searchString := fmt.Sprintf("%s %s", similarSongs[j].Track, similarSongs[j].Artist)
+			searchCommand := exec.Command(
+				"baloosearch",
+				"-d", strings.Replace(xdg.UserDirs.Music, "~", dir, -1),
+				searchString)
+			out, err := searchCommand.CombinedOutput()
+			if err != nil {
+				logger.Warnf("Failed to execute '%s'", searchCommand.String())
+				logger.Warn(err, fmt.Sprintf("%s", out))
+				return
+			}
+			output := string(out[:])
+			s := strings.Split(output, "\n")[0]
+			if strings.HasPrefix(s, "Elapsed") {
+				// baloosearch didnt give a valid output
+				// just suggest this song to the user
+
+				color.HiBlack("Suggestion:")
+				color.Yellow("%s by %s", similarSongs[j].Track, similarSongs[j].Artist)
+				fmt.Println("")
+
+				return
+			}
+			// the baloosearch found an answer
+			color.HiBlack("Queued:")
+			color.Green("%s by %s", similarSongs[j].Track, similarSongs[j].Artist)
+			fmt.Println("")
+			err = exec.Command("elisa", s).Run()
+			if err != nil {
+				logger.Warn(err)
+			}
+
+		}(i)
+
+	}
 }
 
 func cleanup(auth *types.UserInstance) {

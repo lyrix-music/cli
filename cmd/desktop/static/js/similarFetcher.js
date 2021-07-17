@@ -59,6 +59,18 @@ $(document).ready(function() {
         $(".navbar-menu").toggleClass("is-active");
     });
 
+    let queue_songs_button = $("#queue-similar-songs")
+    queue_songs_button.click(function() {
+        queue_songs_button.addClass("is-loading");
+        $.get("/api/v1/player/queue/similar", function() {
+            console.log("Similar songs queued")
+            queue_songs_button.removeClass("is-loading");
+            queue_songs_button.prop("disabled", true);
+            queue_songs_button.text("Queued!");
+        })
+        console.log("fetching similar songs");
+    })
+
 
     $.get("/api/v1/user/logged-in", function(data) {
         console.log("Received data from /user/logged-in")
@@ -88,6 +100,10 @@ $(document).ready(function() {
                 setAlbumArtGradient(item["track"])
 
             })
+            queue_songs_button.prop("disabled", false)
+            queue_songs_button.text("Queue All");
+            queue_songs_button.removeClass("is-loading");
+            
             iswebview().then((x) => {
                 console.log("Detected webview running", x)
                 if (x === false) {
@@ -99,7 +115,7 @@ $(document).ready(function() {
                     let url = $(this).attr("href")
                     $(this).addClass("is-loading")
                     console.log("clicked on", url)
-                    open(url)
+                    open(url)1
                 })
             })
 

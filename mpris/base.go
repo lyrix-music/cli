@@ -74,6 +74,10 @@ func (i *base) GetIdentity() string {
 	return getProperty(i.obj, baseInterface, "Identity").String()
 }
 
+func (i *base) SupportsQueueSong() bool {
+	return i.GetIdentity() == "\"Elisa\""
+}
+
 type player struct {
 	obj *dbus.Object
 }

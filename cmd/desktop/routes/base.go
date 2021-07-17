@@ -2,6 +2,9 @@ package routes
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
+
 	"github.com/godbus/dbus/v5"
 	"github.com/gofiber/fiber/v2"
 	logger2 "github.com/gofiber/fiber/v2/middleware/logger"
@@ -10,11 +13,10 @@ import (
 	"github.com/lyrix-music/cli/cmd/desktop/logging"
 	"github.com/lyrix-music/cli/mpris"
 	"github.com/lyrix-music/cli/player"
+	"github.com/lyrix-music/cli/service"
 	"github.com/lyrix-music/cli/types"
 	sl "github.com/srevinsaju/swaglyrics-go"
 	sltypes "github.com/srevinsaju/swaglyrics-go/types"
-	"os"
-	"path/filepath"
 )
 
 var logger = logging.GetLogger()
@@ -42,7 +44,13 @@ func BuildServer(cfg *types.UserInstance) *fiber.App {
 
 	app.Get("/similar", func(c *fiber.Ctx) error {
 		// Render index
-		return c.Render("similar", fiber.Map{})
+		localPlayer := daemon.GetPlayer()
+		if localPlayer == nil {
+			return c.SendStatus(fiber.StatusBadRequest)
+		}
+		return c.Render("similar", fiber.Map{
+			"queue_song_supported": localPlayer.SupportsQueueSong(),
+		})
 	})
 
 	app.Get("/register", func(c *fiber.Ctx) error {
@@ -110,6 +118,19 @@ func BuildServer(cfg *types.UserInstance) *fiber.App {
 			return c.SendStatus(fiber.StatusInternalServerError)
 		}
 		return c.JSON(localPlayer.GetIdentity())
+	})
+
+	app.Get("/api/v1/player/queue/similar", func(c *fiber.Ctx) error {
+		// get the similar songs to the current playing song, and then
+		// queue similar songs to local player
+		auth := daemon.GetAuth()
+		localPlayer := daemon.GetPlayer()
+		if auth == nil || localPlayer == nil {
+			return c.SendStatus(fiber.StatusUnauthorized)
+		}
+		similarSongs := player.GetSimilar(auth)
+		service.QueueSimilarSongs(similarSongs, localPlayer)
+		return c.SendStatus(fiber.StatusAccepted)
 	})
 
 	app.Get("/api/v1/updates/players", func(c *fiber.Ctx) error {

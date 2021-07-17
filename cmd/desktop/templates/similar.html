@@ -11,6 +11,12 @@
 		<h2 class="subtitle">
 			similar to your current listening song
 		</h2>
+
+		{% if queue_song_supported %}
+		<a class="button is-loading" id="queue-similar-songs">
+			Loading...
+		</a>
+		{% endif %}
 		<div id="similar-songs-container" class="container">
 
 
