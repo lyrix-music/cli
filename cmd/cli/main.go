@@ -14,17 +14,27 @@ import (
 var logger = log.New(os.Stdout)
 
 func main() {
+	if os.Getenv("DEBUG") == "1" {
+		logger = logger.WithDebug()
+	}
 	app := &cli.App{
 		Name:   "Lyrix Daemon",
 		Usage:  "A daemon for lyrix music network",
 		Action: service.StartDaemon,
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
+				Name: "romanize",
+				Usage: "Romanize support CJK characters",
+			},
+			&cli.BoolFlag{
+				Name: "show-lyrics",
+				Usage: "Show lyrics on the terminal.",
+			},
+			&cli.BoolFlag{
 				Name: "lastfm-predict",
 				Usage: "Use Last.fm suggestions to dynamically modify playlists " +
 					"according to your current playing track. (only KDE Elisa)",
 			},
-
 			&cli.BoolFlag{
 				Name:  "lastfm-scrobble",
 				Usage: "Send your current listening song to last fm to get customized tracks",
@@ -45,7 +55,6 @@ func main() {
 					return nil
 				},
 			},
-
 			{
 				Name: "reset-config",
 				Action: func(c *cli.Context) error {

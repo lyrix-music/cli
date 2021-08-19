@@ -3,6 +3,9 @@ package service
 import (
 	"errors"
 	"fmt"
+	k "github.com/srevinsaju/korean-romanizer-go"
+	sl "github.com/srevinsaju/swaglyrics-go"
+	sltypes "github.com/srevinsaju/swaglyrics-go/types"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -27,13 +30,21 @@ import (
 
 var logger = log.New(os.Stdout)
 
+type CliContext struct {
+	ShowLyrics bool
+}
+
 type Context struct {
 	LastFmEnabled bool
 	Predicted     bool
 	Tui           bool
 	Scrobble      bool
 	AppIcon       string
+	Romanize      bool
+	Cli	          *CliContext
 }
+
+
 type DaemonOptions struct {
 }
 
@@ -76,6 +87,7 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 		if isRepeat {
 			color.HiBlack("on Repeat.")
 		}
+
 		song.Position = position
 		song.IsRepeat = isRepeat
 		if auth != nil {
@@ -114,6 +126,26 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 		song.Artist = artist
 		song.Track = title
 		song.Playing = true
+
+
+		if ctx.Cli != nil {
+			if ctx.Cli.ShowLyrics {
+				lyrics, err := sl.GetLyrics(sltypes.Song{Track: song.Track, Artist: song.Artist})
+				if err != nil { logger.Warn(err); return nil }
+				if ctx.Romanize {
+					var newLyrics []string
+					lyricsInLines := strings.Split(lyrics, "\n")
+					for i := range lyricsInLines {
+						fmt.Println(lyricsInLines[i])
+						r := k.NewRomanizer(lyricsInLines[i])
+						color.HiBlack(r.Romanize())
+					}
+					lyrics = strings.Join(newLyrics, "\n")
+				} else {
+					fmt.Println(lyrics)
+				}
+			}
+		}
 
 	} else if pl.GetPlaybackStatus() == "\"Paused\"" && song.Playing {
 		fmt.Println("Playback is paused now")
@@ -206,6 +238,8 @@ func StartDaemon(c *cli.Context) error {
 	ctx := &Context{
 		LastFmEnabled: c.Bool("lastfm-predict"),
 		Scrobble:      c.Bool("lastfm-scrobble"),
+		Romanize: c.Bool("romanize"),
+		Cli: &CliContext{c.Bool("show-lyrics")},
 	}
 
 	auth, err := config.Load(meta.AppName)
