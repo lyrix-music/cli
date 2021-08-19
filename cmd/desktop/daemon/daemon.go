@@ -19,6 +19,11 @@ var player *mpris.Player
 var dbusConn *dbus.Conn
 var ctx *service.Context
 
+// GetRomanizeEnabled returns if romanization is enabled
+func GetRomanizeEnabled() bool {
+	return ctx.Romanize
+}
+
 // GetSong returns the last played song on the desktop
 func GetSong() *types.SongMeta {
 	return song
@@ -27,6 +32,11 @@ func GetSong() *types.SongMeta {
 func SetScrobbleEnabled(enabled bool) {
 	logger.Debug("Setting scrobble preference to", enabled)
 	ctx.Scrobble = enabled
+}
+
+func SetRomanizeEnabled(enabled bool) {
+	logger.Debug("Setting romanize preference to", enabled)
+	ctx.Romanize = enabled
 }
 
 // SetAuth sets the authorization instance
