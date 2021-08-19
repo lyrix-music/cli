@@ -6,5 +6,5 @@ type PlayerChangeRequest struct {
 
 type PlayerLyrics struct {
 	Lyrics string `json:"lyrics,omitempty"`
-	CJK bool `json:"cjk"`
+	CJK    bool   `json:"cjk"`
 }

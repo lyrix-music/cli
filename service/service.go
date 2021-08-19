@@ -41,9 +41,8 @@ type Context struct {
 	Scrobble      bool
 	AppIcon       string
 	Romanize      bool
-	Cli	          *CliContext
+	Cli           *CliContext
 }
-
 
 type DaemonOptions struct {
 }
@@ -127,11 +126,13 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 		song.Track = title
 		song.Playing = true
 
-
 		if ctx.Cli != nil {
 			if ctx.Cli.ShowLyrics {
 				lyrics, err := sl.GetLyrics(sltypes.Song{Track: song.Track, Artist: song.Artist})
-				if err != nil { logger.Warn(err); return nil }
+				if err != nil {
+					logger.Warn(err)
+					return nil
+				}
 				if ctx.Romanize {
 					var newLyrics []string
 					lyricsInLines := strings.Split(lyrics, "\n")
@@ -238,8 +239,8 @@ func StartDaemon(c *cli.Context) error {
 	ctx := &Context{
 		LastFmEnabled: c.Bool("lastfm-predict"),
 		Scrobble:      c.Bool("lastfm-scrobble"),
-		Romanize: c.Bool("romanize"),
-		Cli: &CliContext{c.Bool("show-lyrics")},
+		Romanize:      c.Bool("romanize"),
+		Cli:           &CliContext{c.Bool("show-lyrics")},
 	}
 
 	auth, err := config.Load(meta.AppName)

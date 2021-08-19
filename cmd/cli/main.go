@@ -23,11 +23,11 @@ func main() {
 		Action: service.StartDaemon,
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
-				Name: "romanize",
+				Name:  "romanize",
 				Usage: "Romanize support CJK characters",
 			},
 			&cli.BoolFlag{
-				Name: "show-lyrics",
+				Name:  "show-lyrics",
 				Usage: "Show lyrics on the terminal.",
 			},
 			&cli.BoolFlag{
