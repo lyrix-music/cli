@@ -2,8 +2,10 @@ package routes
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/godbus/dbus/v5"
 	"github.com/gofiber/fiber/v2"
@@ -15,6 +17,7 @@ import (
 	"github.com/lyrix-music/cli/player"
 	"github.com/lyrix-music/cli/service"
 	"github.com/lyrix-music/cli/types"
+	k "github.com/srevinsaju/korean-romanizer-go"
 	sl "github.com/srevinsaju/swaglyrics-go"
 	sltypes "github.com/srevinsaju/swaglyrics-go/types"
 )
@@ -85,6 +88,11 @@ func BuildServer(cfg *types.UserInstance) *fiber.App {
 	app.Post("/api/v1/prefs/scrobble/:enabled", func(c *fiber.Ctx) error {
 		enabled := c.Params("enabled")
 		daemon.SetScrobbleEnabled(enabled == "true")
+		return c.SendStatus(fiber.StatusAccepted)
+	})
+	app.Post("/api/v1/prefs/romanize/:enabled", func(c *fiber.Ctx) error {
+		enabled := c.Params("enabled")
+		daemon.SetRomanizeEnabled(enabled == "true")
 		return c.SendStatus(fiber.StatusAccepted)
 	})
 
@@ -164,6 +172,39 @@ func BuildServer(cfg *types.UserInstance) *fiber.App {
 			return c.SendStatus(fiber.StatusInternalServerError)
 		}
 		return c.SendString(lyrics)
+	})
+
+	app.Get("/api/v1beta/updates/lyrics", func(c *fiber.Ctx) error {
+		s := daemon.GetSong()
+		if s == nil {
+			return c.SendStatus(fiber.StatusNotFound)
+		}
+		lyrics, err := sl.GetLyrics(sltypes.Song{Track: s.Track, Artist: s.Artist})
+		if err != nil {
+			logger.Warn(err)
+			return c.SendStatus(fiber.StatusInternalServerError)
+		}
+		if daemon.GetRomanizeEnabled() {
+			var newLyrics []string
+			lyricsInLines := strings.Split(lyrics, "\n")
+			for i := range lyricsInLines {
+				newLyrics = append(newLyrics, lyricsInLines[i])
+				r := k.NewRomanizer(lyricsInLines[i])
+				newLyrics = append(newLyrics, fmt.Sprintf("<span style='color: #999'>%s</span>", r.Romanize()))
+			}
+			lyrics = strings.Join(newLyrics, "\n")
+		}
+		l := &PlayerLyrics{
+			Lyrics: lyrics,
+			CJK:    false,
+		}
+		for _, v := range l.Lyrics {
+			if k.IsHangul(v) {
+				l.CJK = true
+				break
+			}
+		}
+		return c.JSON(l)
 	})
 
 	app.Get("/", func(c *fiber.Ctx) error {

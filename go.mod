@@ -10,7 +10,9 @@ require (
 	github.com/godbus/dbus/v5 v5.0.4
 	github.com/gofiber/fiber/v2 v2.13.0
 	github.com/gofiber/template v1.6.12
+	github.com/inancgumus/screen v0.0.0-20190314163918-06e984b86ed3
 	github.com/spf13/viper v1.7.1
+	github.com/srevinsaju/korean-romanizer-go v0.0.2
 	github.com/srevinsaju/swaglyrics-go v0.0.0-20210622060022-649d049cd475
 	github.com/toqueteos/webbrowser v1.2.0
 	github.com/urfave/cli/v2 v2.3.0

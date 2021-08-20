@@ -20,6 +20,13 @@ $(document).ready(function() {
         console.log("Restoring scrobble");
         $("#scrobbleSwitch").prop("checked", true)
     }
+    let lastChosenRomanizeOption = false
+    if (window.localStorage.getItem("romanize") === "true") {
+        // restore the last scrobbled track
+        console.log("Restoring romanize");
+        setRomanize(true)
+        lastChosenRomanizeOption = true
+    }
 
     let lastChosenPlayer = window.localStorage.getItem("lastChosenPlayer")
     if (lastChosenPlayer !== null && lastChosenPlayer !== "") {
@@ -35,6 +42,7 @@ $(document).ready(function() {
         if (data["logged_in"] === false) {
             console.log("User is not logged in, disabling scrobble switch")
             $(".requires-auth").remove()
+            $("#navBarLoginButton").text("Login")
         } else {
             $("#navBarLoginButton").text("Logout")
         }
@@ -62,14 +70,39 @@ $(document).ready(function() {
         }, "text")
         window.localStorage.setItem("scrobble", enabled)
     }
+    function setRomanize(enabled, forceRefresh, isSwitch) {
+        console.log("Requesting server to change romanization settings")
+        $.post(`/api/v1/prefs/romanize/${enabled}`, "", function () {
+            console.log("Player changed successfully")
+        }, "text")
+        if (forceRefresh) {
+            getUpdates(true)
+        }
+        if (isSwitch === true) {
+            window.localStorage.setItem("romanize", enabled)
+        }
+        lastChosenRomanizeOption = enabled
+    }
 
 
     function getLyrics() {
         console.log("Trying to fetch Lyrics")
-        $.get("/api/v1/updates/lyrics", function (data) {
+        $.get("/api/v1beta/updates/lyrics", function (data) {
             console.log("Received lyrics")
-            $(".lyrics").html(data.replaceAll("\n", "<br>"))
-        }, "text")
+            $(".lyrics").html(data["lyrics"].replaceAll("\n", "<br>"))
+            if (data["cjk"]) {
+                console.log("CJK supported lyrics")
+                $("#cjkRomanizeSwitchDiv").show()
+                console.log(window.localStorage.getItem("romanize"), lastChosenRomanizeOption, "LLLLLLL")
+                if (window.localStorage.getItem("romanize") === "true"){
+                    setRomanize(true, lastChosenRomanizeOption === false)
+                }
+            } else {
+                setRomanize(false, lastChosenRomanizeOption === true)
+                $("#cjkRomanizeSwitchDiv").hide()
+            }
+        }, "json")
+
 
     }
 
@@ -91,7 +124,7 @@ $(document).ready(function() {
     }
 
 
-    function getUpdates() {
+    function getUpdates(force) {
         console.log("Trying to get updates on song")
 
         $.get("/api/v1/updates/song", function (data) {
@@ -101,10 +134,9 @@ $(document).ready(function() {
             if (track === "") {
                 return
             }
-            if (track === currentTrack && artist === currentArtist) {
+            if (track === currentTrack && artist === currentArtist && (force === false || force === null || force === undefined)) {
                 return
             }
-
             currentArtist = artist
             currentTrack = track
             $(".title").text(track)
@@ -116,10 +148,11 @@ $(document).ready(function() {
 
     }
 
-
-
     $("#scrobbleSwitch").change(function () {
         setScrobble(this.checked)
+    })
+    $("#cjkRomanizeSwitch").change(function () {
+        setRomanize(this.checked, true, true)
     })
 
 
@@ -133,7 +166,7 @@ $(document).ready(function() {
 
 
     getPlayers()
-    getUpdates()
+    getUpdates(false)
     setInterval(getUpdates, 2 * 1000)
     setInterval(getPlayers, 15 * 1000)
 
