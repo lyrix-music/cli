@@ -21,6 +21,7 @@
 
 ![Lyrix Desktop in action](./cmd/desktop/docs/img/screenshot.png)
 
+![Lyrix Desktop with Romanization support](./cmd/desktop/docs/img/screenshot-romanization.png)
 
 Getting Started
 ---------------
