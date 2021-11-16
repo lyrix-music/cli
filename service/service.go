@@ -4,8 +4,10 @@ import (
 	"errors"
 	"fmt"
 	k "github.com/srevinsaju/korean-romanizer-go"
+	dsClient "github.com/srevinsaju/rich-go/client"
 	sl "github.com/srevinsaju/swaglyrics-go"
 	sltypes "github.com/srevinsaju/swaglyrics-go/types"
+
 	"os"
 	"os/exec"
 	"os/signal"
@@ -35,13 +37,14 @@ type CliContext struct {
 }
 
 type Context struct {
-	LastFmEnabled bool
-	Predicted     bool
-	Tui           bool
-	Scrobble      bool
-	AppIcon       string
-	Romanize      bool
-	Cli           *CliContext
+	LastFmEnabled      bool
+	Predicted          bool
+	Tui                bool
+	Scrobble           bool
+	DiscordIntegration bool
+	AppIcon            string
+	Romanize           bool
+	Cli                *CliContext
 }
 
 type DaemonOptions struct {
@@ -101,6 +104,40 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 					IsRepeat: isRepeat,
 					Position: position},
 			)
+			go func() {
+				if ctx.DiscordIntegration && meta.DiscordApplicationId != "" {
+					appName := "Local Player"
+					appId := "lyrix"
+					if strings.HasPrefix(url, "https://music.youtube.com/") {
+						appId = "youtube-music"
+						appName = "Youtube Music"
+					} else if strings.HasPrefix(url, "https://open.spotify.com/") {
+						appId = "spotify"
+						appName = "Spotify"
+					}
+					logger.Info(url)
+
+					t := time.Now()
+					info := title
+					if isRepeat {
+						info += " - on Repeat"
+					}
+					err := dsClient.SetActivity(dsClient.Activity{
+						State:      artist,
+						Details:    info,
+						LargeImage: appId,
+						LargeText:  appName,
+						SmallImage: "lyrix",
+						SmallText:  "Lyrix Music",
+						Timestamps: &dsClient.Timestamps{
+							Start: &t,
+						},
+					})
+					if err != nil {
+						logger.Debug("Failed to set discord ")
+					}
+				}
+			}()
 		}
 
 		if song.Track != "" {
@@ -153,6 +190,20 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 		song.Playing = false
 		if auth != nil {
 			player.NotPlayingSongHandler(auth)
+		}
+		if ctx.DiscordIntegration && meta.DiscordApplicationId != "" {
+			err := dsClient.SetActivity(dsClient.Activity{
+				State:      "",
+				Details:    "",
+				LargeImage: "",
+				LargeText:  "",
+				SmallImage: "",
+				SmallText:  "",
+			})
+                        if err != nil {
+                          logger.Warn("There was an error while clearing discord activity")
+                        }
+
 		}
 
 	}
@@ -237,10 +288,18 @@ func cleanup(auth *types.UserInstance) {
 func StartDaemon(c *cli.Context) error {
 	// TODO move this piece to lyrixd spec
 	ctx := &Context{
-		LastFmEnabled: c.Bool("lastfm-predict"),
-		Scrobble:      c.Bool("lastfm-scrobble"),
-		Romanize:      c.Bool("romanize"),
-		Cli:           &CliContext{c.Bool("show-lyrics")},
+		LastFmEnabled:      c.Bool("lastfm-predict"),
+		Scrobble:           c.Bool("lastfm-scrobble"),
+		Romanize:           c.Bool("romanize"),
+		Cli:                &CliContext{c.Bool("show-lyrics")},
+		DiscordIntegration: c.Bool("discord"),
+	}
+	if ctx.DiscordIntegration && meta.DiscordApplicationId != "" {
+		logger.Info("Enabling discord integration")
+		err := dsClient.Login(meta.DiscordApplicationId)
+		if err != nil {
+			logger.Warn("There was an error enabling discord integration. Kindly report this as a bug:", err)
+		}
 	}
 
 	auth, err := config.Load(meta.AppName)

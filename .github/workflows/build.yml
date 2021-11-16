@@ -30,7 +30,7 @@ jobs:
     - name: Build
       run: |
         cd cmd/cli
-        go build -ldflags "-s -w" .
+        go build -ldflags="-X 'github.com/lyrix-music/cli/meta.BuildTime=$(date +%s)' -X 'github.com/lyrix-music/cli/meta.BuildVersion=$(git describe --always)' -X 'github.com/lyrix-music/cli/meta.DiscordApplicationId=${{ secrets.DiscordApplicationId }}' -s -w" .
         cd ../..
 
     - name: Build Desktop AppImage
