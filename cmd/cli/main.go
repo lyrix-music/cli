@@ -39,6 +39,9 @@ func main() {
 				Name:  "lastfm-scrobble",
 				Usage: "Send your current listening song to last fm to get customized tracks",
 			},
+			&cli.BoolFlag{
+				Name: "discord",
+			},
 		},
 		Commands: []*cli.Command{
 			{
