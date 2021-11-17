@@ -360,7 +360,7 @@ func StartDaemon(c *cli.Context) error {
 		if err != nil {
 			logger.Fatal("Couldn't resolve the base filepath of the exe", err)
 		}
-		exporterPath := filepath.Join(filepath.Dir(exe), "lyrix-win_exporter.exe")
+		exporterPath := filepath.Join(filepath.Dir(exe), fmt.Sprintf("lyrix-windows_exporter%s.exe", meta.BuildVersion))
 		if _, err := os.Stat(exporterPath); os.IsNotExist(err) {
 			logger.Fatalf("Couldn't find lyrix-win_exporter.exe at %s, %s", exporterPath, err)
 		}
