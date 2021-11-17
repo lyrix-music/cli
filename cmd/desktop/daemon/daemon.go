@@ -131,7 +131,8 @@ func daemon() {
 	logger.Info("Media player identity:", player.GetIdentity())
 
 	logger.Debug("Scrobbling enabled:", ctx.Scrobble)
-	err = service.CheckForSongUpdates(ctx, auth, player, song)
+
+	err = service.CheckForSongUpdatesDbus(ctx, auth, player, song)
 	if err != nil {
 		logger.Warn(err)
 		return

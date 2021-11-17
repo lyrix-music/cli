@@ -29,6 +29,7 @@ jobs:
 
     - name: Build
       run: |
+        touch service/lyrix-windows_exporter.exe
         cd cmd/cli
         go build -ldflags="-X 'github.com/lyrix-music/cli/meta.BuildTime=$(date +%s)' -X 'github.com/lyrix-music/cli/meta.BuildVersion=$(git describe --always)' -X 'github.com/lyrix-music/cli/meta.DiscordApplicationId=${{ secrets.DiscordApplicationId }}' -s -w" .
         mv cli lyrix-cli_linux64
@@ -42,8 +43,8 @@ jobs:
 
     - name: Build Desktop AppImage
       run: |
-        cd cmd/desktop
 
+        cd cmd/desktop
         # copy the styles
         mkdir -p static/css
         wget https://raw.githubusercontent.com/lyrix-music/styles/main/css/lyrix.css -O static/css/lyrix.css
@@ -84,7 +85,7 @@ jobs:
           pip3 install poetry
           poetry install
           poetry run pyinstaller exporter.py --onefile
-          mv exporter.exe ../../cmd/cli/lyrix-windows_exporter.exe
+          mv dist/exporter.exe ../../service/lyrix-windows_exporter.exe
 
       - name: Build
         run: |
@@ -102,7 +103,7 @@ jobs:
     needs: [build, windows]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifacts@v2
+      - uses: actions/download-artifact@v2
 
       - name: Release
         env:
