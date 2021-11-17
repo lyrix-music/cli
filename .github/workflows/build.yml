@@ -112,4 +112,4 @@ jobs:
           wget https://github.com/TheAssassin/pyuploadtool/releases/download/continuous/pyuploadtool-x86_64.AppImage
           chmod +x pyuploadtool-x86_64.AppImage
           ls -alHR
-          ./pyuploadtool-x86_64.AppImage cmd/cli/cli cmd/desktop/Lyrix*.AppImage cmd/cli
+          ./pyuploadtool-x86_64.AppImage ./lyrix-cli-windows/lyrix-cli-win64.exe ./lyrix-appimage/Lyrix-x86_64.AppImage ./lyrix-cli-linux/lyrix-cli_linux64
