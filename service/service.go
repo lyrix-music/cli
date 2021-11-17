@@ -51,6 +51,8 @@ type Context struct {
 type DaemonOptions struct {
 }
 
+
+
 func CheckForSongUpdatesDbus(ctx *Context, auth *types.UserInstance, pl *mpris.Player, song *types.SongMeta) error {
 
 	metadata, ok := pl.GetMetadata()
@@ -353,6 +355,7 @@ func StartDaemon(c *cli.Context) error {
 		}()
 	}
 	if runtime.GOOS == "windows" {
+		Run()
 		exe, err := os.Executable()
 		if err != nil {
 			logger.Fatal("Couldn't resolve the base filepath of the exe", err)
