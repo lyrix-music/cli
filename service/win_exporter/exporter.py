@@ -35,4 +35,8 @@ async def get_media_info():
 
 if __name__ == '__main__':
     current_media_info = asyncio.run(get_media_info())
-    print(json.dumps(current_media_info))
+    n = {
+        "artist": current_media_info.get("artist"),
+        "title": current_media_info.get("title")
+    }
+    print(json.dumps(n))
