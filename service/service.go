@@ -363,10 +363,8 @@ func StartDaemon(c *cli.Context) error {
 		}
 		song := &types.SongMeta{}
 
-		cmd := exec.Command(exporterPath)
-
 		for {
-			err := CheckForSongUpdatesWinRTExporter(ctx, auth, cmd, song)
+			err := CheckForSongUpdatesWinRTExporter(ctx, auth, exporterPath, song)
 			if err != nil {
 				logger.Warn(err)
 				break

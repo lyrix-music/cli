@@ -14,7 +14,8 @@ type WindowsExporterSong struct {
 }
 
 
-func CheckForSongUpdatesWinRTExporter(ctx *Context, auth *types.UserInstance, cmd *exec.Cmd,  song *types.SongMeta) error {
+func CheckForSongUpdatesWinRTExporter(ctx *Context, auth *types.UserInstance, exporterPath string,  song *types.SongMeta) error {
+	cmd := exec.Command(exporterPath)
 
 	cmdOutput := &bytes.Buffer{}
 	cmd.Stdout = cmdOutput
