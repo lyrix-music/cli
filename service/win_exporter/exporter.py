@@ -1,5 +1,5 @@
 import asyncio
-
+import json
 from winrt.windows.media.control import GlobalSystemMediaTransportControlsSessionManager as MediaManager
 # https://stackoverflow.com/q/65011660/
 
@@ -28,9 +28,11 @@ async def get_media_info():
             info_dict['genres'] = list(info_dict['genres'])
 
             return info_dict
+    else:
+        return {}
 
 
 
 if __name__ == '__main__':
     current_media_info = asyncio.run(get_media_info())
-    print(current_media_info)
+    print(json.dumps(current_media_info))
