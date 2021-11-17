@@ -26,7 +26,7 @@ func CheckForSongUpdatesWinRTExporter(ctx *Context, auth *types.UserInstance, cm
 	}
 
 	wSong := &WindowsExporterSong{}
-	out, err := cmd.Output()
+	out := cmdOutput.Bytes()
 	if err != nil {
 		logger.Warn("No output received from win_exporter, skipping", err)
 	}
