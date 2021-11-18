@@ -7,4 +7,5 @@ type ServiceSong struct {
 	Url      string
 	Status   string
 	Position int64
+        Source string
 }

@@ -5,12 +5,15 @@ import (
 	"encoding/json"
 	"github.com/lyrix-music/cli/types"
 	"os"
+        "strings"
 	"os/exec"
 )
 
 type WindowsExporterSong struct {
-	Title  string `json:"title"`
-	Artist string `json:"artist"`
+	Title     string `json:"title"`
+	Artist    string `json:"artist"`
+	Source    string `json:"source"`
+	IsPlaying bool   `json:"is_playing"`
 }
 
 func CheckForSongUpdatesWinRTExporter(ctx *Context, auth *types.UserInstance, exporterPath string, song *types.SongMeta) error {
@@ -37,11 +40,26 @@ func CheckForSongUpdatesWinRTExporter(ctx *Context, auth *types.UserInstance, ex
 		logger.Warn("failed to parse output from win_exporter")
 		panic(err)
 	}
+	status := "Paused"
+	if wSong.IsPlaying {
+		status = "Playing"
+	}
+
+	source := "local"
+	if source == "Groove Music" {
+		source = "groove-music"
+	} else if source == "VLC" {
+		source = "vlc"
+	} else {
+		source = strings.Replace(" ", "-", source, -1)
+	}
 
 	svcSong := &ServiceSong{
 		Artist: wSong.Artist,
 		Title:  wSong.Title,
-		Status: "Playing", // win_exporter doesn't return this yet
+		Source: source,
+
+		Status: status,
 	}
 
 	return checkForSongUpdates(ctx, auth, svcSong, song)

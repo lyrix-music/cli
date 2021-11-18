@@ -1,5 +1,6 @@
 import asyncio
 import json
+import traceback
 from winrt.windows.media.control import (
     GlobalSystemMediaTransportControlsSessionManager as MediaManager,
 )
@@ -12,7 +13,6 @@ from winrt.windows.media.control import (
 
 async def get_media_info():
     sessions = await MediaManager.request_async()
-    playback_sessions = await MediaStatus.request_async()
 
     # This source_app_user_model_id check and if statement is optional
     # Use it if you want to only get a certain player/program's media
@@ -29,12 +29,12 @@ async def get_media_info():
         info = await current_session.try_get_media_properties_async()
 
         is_playing = True
-        playback_session = asyncio.run()
-        if (
-            MediaStatus["PAUSED"]
-            == playback_session.get_playback_info().playback_status
-        ):
-            is_playing = False
+        try:
+            if MediaStatus["PAUSED"] == current_session.get_playback_info().playback_status:
+                is_playing = False
+        except Exception as e:
+            print(e)
+            print(traceback.format_exc())
 
         # song_attr[0] != '_' ignores system attributes
         info_dict = {
