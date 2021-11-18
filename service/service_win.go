@@ -9,12 +9,11 @@ import (
 )
 
 type WindowsExporterSong struct {
-	Title string `json:"title"`
+	Title  string `json:"title"`
 	Artist string `json:"artist"`
 }
 
-
-func CheckForSongUpdatesWinRTExporter(ctx *Context, auth *types.UserInstance, exporterPath string,  song *types.SongMeta) error {
+func CheckForSongUpdatesWinRTExporter(ctx *Context, auth *types.UserInstance, exporterPath string, song *types.SongMeta) error {
 	cmd := exec.Command(exporterPath)
 
 	cmdOutput := &bytes.Buffer{}
@@ -39,11 +38,10 @@ func CheckForSongUpdatesWinRTExporter(ctx *Context, auth *types.UserInstance, ex
 		panic(err)
 	}
 
-
 	svcSong := &ServiceSong{
-		Artist:   wSong.Artist,
-		Title:    wSong.Title,
-		Status:   "Playing", // win_exporter doesn't return this yet
+		Artist: wSong.Artist,
+		Title:  wSong.Title,
+		Status: "Playing", // win_exporter doesn't return this yet
 	}
 
 	return checkForSongUpdates(ctx, auth, svcSong, song)

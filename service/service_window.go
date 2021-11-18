@@ -22,5 +22,4 @@ func Run() {
 		_ = os.WriteFile(data, f, 0755)
 	}
 
-
 }

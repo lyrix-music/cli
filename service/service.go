@@ -51,8 +51,6 @@ type Context struct {
 type DaemonOptions struct {
 }
 
-
-
 func CheckForSongUpdatesDbus(ctx *Context, auth *types.UserInstance, pl *mpris.Player, song *types.SongMeta) error {
 
 	metadata, ok := pl.GetMetadata()
@@ -96,17 +94,15 @@ func CheckForSongUpdatesDbus(ctx *Context, auth *types.UserInstance, pl *mpris.P
 
 }
 
-
 func checkForSongUpdates(ctx *Context, auth *types.UserInstance, m *ServiceSong, song *types.SongMeta) error {
 	if m == nil {
 		return errors.New("player is no longer active")
 	}
 
-	if m.Title == "" || (m.Artist == "" && len(m.Artists) == 0 ) {
+	if m.Title == "" || (m.Artist == "" && len(m.Artists) == 0) {
 		// wait for sometime
 		return nil
 	}
-
 
 	artist := ""
 	if len(m.Artists) >= 1 {
@@ -253,10 +249,8 @@ func checkForSongUpdates(ctx *Context, auth *types.UserInstance, m *ServiceSong,
 
 	}
 
-
 	return nil
 }
-
 
 func QueueSimilarSongs(similarSongs []types.SongMeta, pl *mpris.Player) {
 	usr, _ := user.Current()
@@ -335,14 +329,14 @@ func StartDaemon(c *cli.Context) error {
 		if err != nil {
 			logger.Warn("There was an error enabling discord integration. Kindly report this as a bug:", err)
 		}
+	} else {
+		logger.Info("Discord integration disabled", ctx.DiscordIntegration, meta.DiscordApplicationId != "")
 	}
 
 	auth, err := config.Load(meta.AppName)
 	if err != nil {
 		logger.Warn(err)
 	}
-
-
 
 	ch := make(chan os.Signal)
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
@@ -438,8 +432,5 @@ func StartDaemon(c *cli.Context) error {
 		}
 	}
 
-
-
 	return nil
 }
-
