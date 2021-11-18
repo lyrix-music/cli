@@ -31,7 +31,8 @@ jobs:
       run: |
         touch service/lyrix-windows_exporter.exe
         cd cmd/cli
-        go build -ldflags="-X 'github.com/lyrix-music/cli/meta.BuildTime=$(date +%s)' -X 'github.com/lyrix-music/cli/meta.BuildVersion=$(git describe --always)' -X 'github.com/lyrix-music/cli/meta.DiscordApplicationId=${{ secrets.DiscordApplicationId }}' -s -w" .
+        go build -ldflags="-X 'github.com/lyrix-music/cli/meta.BuildTime=$(date +%s)' -X 'github.com/lyrix-music/cli/meta.BuildVersion=$(git describe --always)' -X 'github.com/lyrix-music/cli/meta.DiscordApplicationId=909063561869922335' -s -w" .
+
         mv cli lyrix-cli_linux64
         cd ../..
 
@@ -90,7 +91,8 @@ jobs:
       - name: Build
         run: |
           cd cmd/cli
-          go build -ldflags="-X 'github.com/lyrix-music/cli/meta.BuildTime=$(date +%s)' -X 'github.com/lyrix-music/cli/meta.BuildVersion=$(git describe --always)' -X 'github.com/lyrix-music/cli/meta.DiscordApplicationId=${{ secrets.DiscordApplicationId }}' -s -w" .
+          go build -ldflags="-X 'github.com/lyrix-music/cli/meta.BuildTime=$(date +%s)' -X 'github.com/lyrix-music/cli/meta.BuildVersion=$(git describe --always)' -X 'github.com/lyrix-music/cli/meta.DiscordApplicationId=909063561869922335' -s -w" .
+
           mv cli.exe lyrix-cli_win64.exe
           cd ../..
 
