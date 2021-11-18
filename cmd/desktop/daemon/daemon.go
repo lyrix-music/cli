@@ -9,6 +9,7 @@ import (
 	"github.com/withmandala/go-log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 )
 
@@ -102,6 +103,14 @@ func Start() {
 
 }
 
+func daemonNonWindows() {
+
+}
+
+func daemonWindows() {
+
+}
+
 func daemon() {
 	var err error
 
@@ -131,6 +140,9 @@ func daemon() {
 	logger.Info("Media player identity:", player.GetIdentity())
 
 	logger.Debug("Scrobbling enabled:", ctx.Scrobble)
+	if runtime.GOOS == "windows" {
+		err = service.CheckForSongUpdatesWinRTExporter(ctx, auth, )
+	}
 
 	err = service.CheckForSongUpdatesDbus(ctx, auth, player, song)
 	if err != nil {

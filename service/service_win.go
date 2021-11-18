@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"github.com/lyrix-music/cli/types"
 	"os"
-        "strings"
 	"os/exec"
+	"strings"
 )
 
 type WindowsExporterSong struct {
@@ -46,10 +46,12 @@ func CheckForSongUpdatesWinRTExporter(ctx *Context, auth *types.UserInstance, ex
 	}
 
 	source := "local"
-	if source == "Groove Music" {
+	if wSong.Source == "Groove Music" {
 		source = "groove-music"
-	} else if source == "VLC" {
+	} else if wSong.Source == "VLC" {
 		source = "vlc"
+	} else if strings.HasPrefix(wSong.Source, "Microsoft.ZuneMusic") {
+		source = "groove-music"
 	} else {
 		source = strings.Replace(" ", "-", source, -1)
 	}

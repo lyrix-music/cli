@@ -110,7 +110,10 @@ func checkForSongUpdates(ctx *Context, auth *types.UserInstance, m *ServiceSong,
 	} else {
 		artist = m.Artist
 	}
-	source := "local"
+	source := m.Source
+	if m.Source == "" {
+		source = "local"
+	}
 	url := m.Url
 	if strings.HasPrefix(url, "https://music.youtube.com/") {
 		// this is a song played on music.youtube.com
@@ -149,7 +152,10 @@ func checkForSongUpdates(ctx *Context, auth *types.UserInstance, m *ServiceSong,
 				if ctx.DiscordIntegration && meta.DiscordApplicationId != "" {
 					appName := "Local Player"
 					appId := "lyrix"
-					if strings.HasPrefix(url, "https://music.youtube.com/") {
+					if source == "groove-music" {
+					    appId = source
+						appName = "Groove Music"
+					} else if strings.HasPrefix(url, "https://music.youtube.com/") {
 						appId = "youtube-music"
 						appName = "Youtube Music"
 					} else if strings.HasPrefix(url, "https://open.spotify.com/") {
