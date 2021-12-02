@@ -141,7 +141,7 @@ func daemon() {
 
 	logger.Debug("Scrobbling enabled:", ctx.Scrobble)
 	if runtime.GOOS == "windows" {
-		err = service.CheckForSongUpdatesWinRTExporter(ctx, auth, )
+		err = service.CheckForSongUpdatesWinRTExporter(ctx, auth)
 	}
 
 	err = service.CheckForSongUpdatesDbus(ctx, auth, player, song)
