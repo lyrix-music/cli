@@ -3,12 +3,6 @@ package service
 import (
 	"errors"
 	"fmt"
-	"github.com/AlecAivazis/survey/v2"
-	"github.com/godbus/dbus/v5"
-	k "github.com/srevinsaju/korean-romanizer-go"
-	dsClient "github.com/srevinsaju/rich-go/client"
-	sl "github.com/srevinsaju/swaglyrics-go"
-	sltypes "github.com/srevinsaju/swaglyrics-go/types"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -18,6 +12,13 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/godbus/dbus/v5"
+	k "github.com/srevinsaju/korean-romanizer-go"
+	dsClient "github.com/srevinsaju/rich-go/client"
+	sl "github.com/srevinsaju/swaglyrics-go"
+	sltypes "github.com/srevinsaju/swaglyrics-go/types"
 
 	"github.com/adrg/xdg"
 	"github.com/fatih/color"
@@ -152,15 +153,20 @@ func checkForSongUpdates(ctx *Context, auth *types.UserInstance, m *ServiceSong,
 				if ctx.DiscordIntegration && meta.DiscordApplicationId != "" {
 					appName := "Local Player"
 					appId := "lyrix"
+					discordApplicationId := meta.DiscordApplicationId
+
 					if source == "groove-music" {
-					    appId = source
+						appId = source
 						appName = "Groove Music"
+						discordApplicationId = meta.GrooveMusicApplicationID
 					} else if strings.HasPrefix(url, "https://music.youtube.com/") {
 						appId = "youtube-music"
 						appName = "Youtube Music"
+						discordApplicationId = meta.YoutubeMusicApplicationID
 					} else if strings.HasPrefix(url, "https://open.spotify.com/") {
 						appId = "spotify"
 						appName = "Spotify"
+						discordApplicationId = meta.SpotifyApplicationID
 					}
 					logger.Info(url)
 
@@ -169,6 +175,7 @@ func checkForSongUpdates(ctx *Context, auth *types.UserInstance, m *ServiceSong,
 					if isRepeat {
 						info += " - on Repeat"
 					}
+					_ = dsClient.Login(discordApplicationId)
 					err := dsClient.SetActivity(dsClient.Activity{
 						State:      artist,
 						Details:    info,
@@ -239,6 +246,7 @@ func checkForSongUpdates(ctx *Context, auth *types.UserInstance, m *ServiceSong,
 			player.NotPlayingSongHandler(auth)
 		}
 		if ctx.DiscordIntegration && meta.DiscordApplicationId != "" {
+			dsClient.Logout()
 			err := dsClient.SetActivity(dsClient.Activity{
 				State:      "",
 				Details:    "",
@@ -331,12 +339,6 @@ func StartDaemon(c *cli.Context) error {
 	}
 	if ctx.DiscordIntegration && meta.DiscordApplicationId != "" {
 		logger.Info("Enabling discord integration")
-		err := dsClient.Login(meta.DiscordApplicationId)
-		if err != nil {
-			logger.Warn("There was an error enabling discord integration. Kindly report this as a bug:", err)
-		}
-	} else {
-		logger.Info("Discord integration disabled", ctx.DiscordIntegration, meta.DiscordApplicationId != "")
 	}
 
 	auth, err := config.Load(meta.AppName)
