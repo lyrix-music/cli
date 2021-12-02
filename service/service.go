@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+
 	k "github.com/srevinsaju/korean-romanizer-go"
 	dsClient "github.com/srevinsaju/rich-go/client"
 	sl "github.com/srevinsaju/swaglyrics-go"
@@ -108,12 +109,15 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 				if ctx.DiscordIntegration && meta.DiscordApplicationId != "" {
 					appName := "Local Player"
 					appId := "lyrix"
+					discordApplicationId := meta.DiscordApplicationId
 					if strings.HasPrefix(url, "https://music.youtube.com/") {
 						appId = "youtube-music"
 						appName = "Youtube Music"
+						discordApplicationId = meta.YoutubeMusicApplicationID
 					} else if strings.HasPrefix(url, "https://open.spotify.com/") {
 						appId = "spotify"
 						appName = "Spotify"
+						discordApplicationId = meta.SpotifyApplicationID
 					}
 					logger.Info(url)
 
@@ -122,6 +126,7 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 					if isRepeat {
 						info += " - on Repeat"
 					}
+					_ = dsClient.Login(discordApplicationId)
 					err := dsClient.SetActivity(dsClient.Activity{
 						State:      artist,
 						Details:    info,
@@ -192,6 +197,7 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 			player.NotPlayingSongHandler(auth)
 		}
 		if ctx.DiscordIntegration && meta.DiscordApplicationId != "" {
+			dsClient.Logout()
 			err := dsClient.SetActivity(dsClient.Activity{
 				State:      "",
 				Details:    "",
@@ -200,9 +206,9 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 				SmallImage: "",
 				SmallText:  "",
 			})
-                        if err != nil {
-                          logger.Warn("There was an error while clearing discord activity")
-                        }
+			if err != nil {
+				logger.Warn("There was an error while clearing discord activity")
+			}
 
 		}
 
@@ -296,10 +302,7 @@ func StartDaemon(c *cli.Context) error {
 	}
 	if ctx.DiscordIntegration && meta.DiscordApplicationId != "" {
 		logger.Info("Enabling discord integration")
-		err := dsClient.Login(meta.DiscordApplicationId)
-		if err != nil {
-			logger.Warn("There was an error enabling discord integration. Kindly report this as a bug:", err)
-		}
+
 	}
 
 	auth, err := config.Load(meta.AppName)
