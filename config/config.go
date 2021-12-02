@@ -33,6 +33,10 @@ func Preload(appName string) {
 	viper.AddConfigPath(fmt.Sprintf("$HOME/.config/lyrix/%s/", appName)) // call multiple times to add many search paths
 	viper.AddConfigPath(fmt.Sprintf("/etc/lyrix/%s/", appName))          // path to look for the config file in
 	viper.AddConfigPath(".")
+	a, _ := GetPath("lyrixd")
+	viper.AddConfigPath(a)
+
+	viper.AddConfigPath(fmt.Sprintf("/etc/lyrix/%s/", appName))
 
 }
 

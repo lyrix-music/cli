@@ -3,25 +3,26 @@ package service
 import (
 	"errors"
 	"fmt"
-
-	k "github.com/srevinsaju/korean-romanizer-go"
-	dsClient "github.com/srevinsaju/rich-go/client"
-	sl "github.com/srevinsaju/swaglyrics-go"
-	sltypes "github.com/srevinsaju/swaglyrics-go/types"
-
 	"os"
 	"os/exec"
 	"os/signal"
 	"os/user"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/godbus/dbus/v5"
+	k "github.com/srevinsaju/korean-romanizer-go"
+	dsClient "github.com/srevinsaju/rich-go/client"
+	sl "github.com/srevinsaju/swaglyrics-go"
+	sltypes "github.com/srevinsaju/swaglyrics-go/types"
+
 	"github.com/adrg/xdg"
 	"github.com/fatih/color"
 	"github.com/gen2brain/beeep"
-	"github.com/godbus/dbus/v5"
 	"github.com/lyrix-music/cli/config"
 	"github.com/lyrix-music/cli/meta"
 	"github.com/lyrix-music/cli/mpris"
@@ -51,12 +52,14 @@ type Context struct {
 type DaemonOptions struct {
 }
 
-func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Player, song *types.SongMeta) error {
+func CheckForSongUpdatesDbus(ctx *Context, auth *types.UserInstance, pl *mpris.Player, song *types.SongMeta) error {
 
 	metadata, ok := pl.GetMetadata()
 	if !ok {
 		return errors.New("player is no longer active")
 	}
+
+	// parse artist from mpris
 	if metadata["xesam:artist"].Value() == nil || metadata["xesam:title"].Value() == nil {
 		// wait for sometime
 		return nil
@@ -69,19 +72,60 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 		artist = metadata["xesam:artist"].Value().(string)
 	}
 
+	// get URL
 	url, ok := metadata["xesam:url"].Value().(string)
-	source := "local"
 
-	if ok && strings.HasPrefix(url, "https://music.youtube.com/") {
+	status := "Paused"
+	if pl.GetPlaybackStatus() == "\"Playing\"" {
+		status = "Playing"
+	}
+
+	title := metadata["xesam:title"].Value().(string)
+
+	svcSong := &ServiceSong{
+		Artist:   artist,
+		Artists:  artists,
+		Title:    title,
+		Url:      url,
+		Status:   status,
+		Position: pl.GetPosition(),
+	}
+
+	return checkForSongUpdates(ctx, auth, svcSong, song)
+
+}
+
+func checkForSongUpdates(ctx *Context, auth *types.UserInstance, m *ServiceSong, song *types.SongMeta) error {
+	if m == nil {
+		return errors.New("player is no longer active")
+	}
+
+	if m.Title == "" || (m.Artist == "" && len(m.Artists) == 0) {
+		// wait for sometime
+		return nil
+	}
+
+	artist := ""
+	if len(m.Artists) >= 1 {
+		artist = m.Artists[0]
+	} else {
+		artist = m.Artist
+	}
+	source := m.Source
+	if m.Source == "" {
+		source = "local"
+	}
+	url := m.Url
+	if strings.HasPrefix(url, "https://music.youtube.com/") {
 		// this is a song played on music.youtube.com
 		artist = strings.Replace(artist, " - Topic", "", 1)
 		source = "music.youtube.com"
 	}
-	title := metadata["xesam:title"].Value().(string)
-	playerIsPlaying := pl.GetPlaybackStatus() == "\"Playing\""
+	title := m.Title
+	playerIsPlaying := m.Status == "Playing"
 	artist = strings.Replace(artist, " - Topic", "", -1)
 
-	position := pl.GetPosition()
+	position := m.Position
 
 	isRepeat := position < song.Position && song.Artist == artist && song.Track == title
 	if playerIsPlaying && (song.Artist != artist || song.Track != title || !song.Playing || isRepeat) {
@@ -110,7 +154,12 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 					appName := "Local Player"
 					appId := "lyrix"
 					discordApplicationId := meta.DiscordApplicationId
-					if strings.HasPrefix(url, "https://music.youtube.com/") {
+
+					if source == "groove-music" {
+						appId = source
+						appName = "Groove Music"
+						discordApplicationId = meta.GrooveMusicApplicationID
+					} else if strings.HasPrefix(url, "https://music.youtube.com/") {
 						appId = "youtube-music"
 						appName = "Youtube Music"
 						discordApplicationId = meta.YoutubeMusicApplicationID
@@ -190,7 +239,7 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 			}
 		}
 
-	} else if pl.GetPlaybackStatus() == "\"Paused\"" && song.Playing {
+	} else if m.Status == "Paused" && song.Playing {
 		fmt.Println("Playback is paused now")
 		song.Playing = false
 		if auth != nil {
@@ -213,18 +262,6 @@ func CheckForSongUpdates(ctx *Context, auth *types.UserInstance, pl *mpris.Playe
 		}
 
 	}
-	go func() {
-		// el
-		// logger.Info("pl.GetIdentity() == \"Elisa\" && ctx.LastFmEnabled && !ctx.Predicted", pl.GetIdentity() == "\"Elisa\"" && ctx.LastFmEnabled && !ctx.Predicted)
-		if ctx.LastFmEnabled && !ctx.Predicted && song.Playing {
-			ctx.Predicted = true
-			if auth != nil {
-				return
-			}
-			similarSongs := player.GetSimilar(auth)
-			QueueSimilarSongs(similarSongs, pl)
-		}
-	}()
 
 	return nil
 }
@@ -302,16 +339,11 @@ func StartDaemon(c *cli.Context) error {
 	}
 	if ctx.DiscordIntegration && meta.DiscordApplicationId != "" {
 		logger.Info("Enabling discord integration")
-
 	}
 
 	auth, err := config.Load(meta.AppName)
 	if err != nil {
 		logger.Warn(err)
-	}
-	conn, err := dbus.SessionBus()
-	if err != nil {
-		panic(err)
 	}
 
 	ch := make(chan os.Signal)
@@ -324,48 +356,87 @@ func StartDaemon(c *cli.Context) error {
 			os.Exit(1)
 		}()
 	}
-
-	// id of the music player from dbus
-	mpDbusId := ""
-	logger.Info("Waiting for a music player...")
-	for {
-		names, err := mpris.List(conn)
+	if runtime.GOOS == "windows" {
+		Run()
+		exe, err := os.Executable()
 		if err != nil {
-			panic(err)
+			logger.Fatal("Couldn't resolve the base filepath of the exe", err)
 		}
-		if len(names) == 0 {
-			logger.Fatal("No media player found.")
+		exporterPath := filepath.Join(filepath.Dir(exe), fmt.Sprintf("lyrix-windows_exporter%s.exe", meta.BuildVersion))
+		if _, err := os.Stat(exporterPath); os.IsNotExist(err) {
+			logger.Fatalf("Couldn't find lyrix-win_exporter.exe at %s, %s", exporterPath, err)
 		}
-
-		mpDbusId = ""
-		if len(names) == 1 {
-			mpDbusId = names[0]
-		} else {
-			prompt := &survey.Select{
-				Message: "Lyrix found multiple players. Select one:",
-				Options: names,
-			}
-			survey.AskOne(prompt, &mpDbusId)
-		}
-
-		if mpDbusId == "" {
-			logger.Warn("Failed to detect media players")
-			break
-		}
-
-		pl := mpris.New(conn, mpDbusId)
-
-		logger.Info("Media player identity:", pl.GetIdentity())
-
 		song := &types.SongMeta{}
+
 		for {
-			err := CheckForSongUpdates(ctx, auth, pl, song)
+			err := CheckForSongUpdatesWinRTExporter(ctx, auth, exporterPath, song)
 			if err != nil {
 				logger.Warn(err)
 				break
 			}
 			time.Sleep(5 * time.Second)
+		}
 
+	} else {
+		conn, err := dbus.SessionBus()
+		if err != nil {
+			panic(err)
+		}
+
+		// id of the music player from dbus
+		mpDbusId := ""
+		logger.Info("Waiting for a music player...")
+		for {
+			names, err := mpris.List(conn)
+			if err != nil {
+				panic(err)
+			}
+			if len(names) == 0 {
+				logger.Fatal("No media player found.")
+			}
+
+			mpDbusId = ""
+			if len(names) == 1 {
+				mpDbusId = names[0]
+			} else {
+				prompt := &survey.Select{
+					Message: "Lyrix found multiple players. Select one:",
+					Options: names,
+				}
+				survey.AskOne(prompt, &mpDbusId)
+			}
+
+			if mpDbusId == "" {
+				logger.Warn("Failed to detect media players")
+				break
+			}
+
+			pl := mpris.New(conn, mpDbusId)
+
+			logger.Info("Media player identity:", pl.GetIdentity())
+
+			song := &types.SongMeta{}
+			for {
+				err := CheckForSongUpdatesDbus(ctx, auth, pl, song)
+				if err != nil {
+					logger.Warn(err)
+					break
+				}
+				go func() {
+					// el
+					// logger.Info("pl.GetIdentity() == \"Elisa\" && ctx.LastFmEnabled && !ctx.Predicted", pl.GetIdentity() == "\"Elisa\"" && ctx.LastFmEnabled && !ctx.Predicted)
+					if ctx.LastFmEnabled && !ctx.Predicted && song.Playing {
+						ctx.Predicted = true
+						if auth != nil {
+							return
+						}
+						similarSongs := player.GetSimilar(auth)
+						QueueSimilarSongs(similarSongs, pl)
+					}
+				}()
+				time.Sleep(5 * time.Second)
+
+			}
 		}
 	}
 
